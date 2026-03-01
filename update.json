@@ -1,0 +1,77 @@
+{
+    "version": "1.0.2",
+    "min_app_version": "1.0.0",
+    "notes": "This update introduces Category & Brand bulk upload for faster data management, adds mobile login with OTP for improved security, and enables the Forgot Password feature in the Rider app for easier account recovery.",
+    "run_migrations": true,
+    "run_seeders": false,
+    "vendor_update": false,
+    "actions": [
+        {
+            "type": "add",
+            "source": "app",
+            "target": "app"
+        },
+        {
+            "type": "add",
+            "source": "config/menu.php",
+            "target": "config/menu.php"
+        },
+        {
+            "type": "add",
+            "source": "database",
+            "target": "database"
+        },
+        {
+            "type": "add",
+            "source": "packages",
+            "target": "packages"
+        },
+        {
+            "type": "add",
+            "source": "resources",
+            "target": "resources"
+        },
+        {
+            "type": "add",
+            "source": "routes",
+            "target": "routes"
+        },
+        {
+            "type": "add",
+            "source": "public/assets/admin",
+            "target": "public/assets/admin"
+        },
+        {
+            "type": "add",
+            "source": "public/assets/images",
+            "target": "public/assets/images"
+        },
+        {
+            "type": "add",
+            "source": "public/assets/css",
+            "target": "public/assets/css"
+        },
+        {
+            "type": "add",
+            "source": "public/assets/js",
+            "target": "public/assets/js"
+        },
+        {
+            "type": "add",
+            "source": "public/assets/seller",
+            "target": "public/assets/seller"
+        },
+        {
+            "type": "add",
+            "source": "public/firebase-messaging-sw.js",
+            "target": "public/firebase-messaging-sw.js"
+        }
+    ],
+    "commands": [
+        "config:clear",
+        "config:cache",
+        "route:clear",
+        "view:clear",
+        "view:cache"
+    ]
+}
