@@ -105,6 +105,9 @@
                             <input type="hidden" name="radius_km" id="radius-km"
                                    value="{{$deliveryZone->radius_km ?? ""}}">
                             @if(!empty($deliveryZone))
+                                <input type="hidden" id="current-zone-id" value="{{$deliveryZone->id}}" />
+                            @endif
+                            @if(!empty($deliveryZone))
                                 <textarea class="d-none" id="existing-delivery-zone">{{$deliveryZone}}</textarea>
                             @endif
                             <div class="place-autocomplete-card" id="place-autocomplete-card">

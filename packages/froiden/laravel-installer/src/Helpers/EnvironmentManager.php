@@ -71,6 +71,7 @@ APP_URL="' . request()->getSchemeAndHttpHost() . '"
 
         // @ignoreCodingStandard
         $rows       = explode("\n", $env);
+        // Only clean DB and APP_URL keys here. Preserve any LICENSE_* values written by the License step.
         $unwanted   = "DB_HOST|DB_DATABASE|DB_USERNAME|DB_PASSWORD|APP_URL";
         $cleanArray = preg_grep("/$unwanted/i", $rows, PREG_GREP_INVERT);
 

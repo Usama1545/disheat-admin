@@ -91,6 +91,7 @@
                                         </div>
                                         <div class="card-body">
                                             <div id="autocomplete-container" class="form-row" style="display: none;"></div>
+                                            <div class="alert alert-info"> {{__('messages.select_zone_message')}}</div>
                                             <div id="map"></div>
                                             <div class="mb-3">
                                                 <label

@@ -161,14 +161,14 @@
                                             style="width: 180px;">{{ __('labels.timing') }}</td>
                                         <td class="border-0">{{ $store->timing }}</td>
                                     </tr>
-                                    <tr>
-                                        <td class="fw-bold border-0">{{ __('labels.order_preparation_time') }}</td>
-                                        <td class="border-0">{{ $store->order_preparation_time }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="fw-bold border-0">{{ __('labels.max_delivery_distance') }}</td>
-                                        <td class="border-0">{{ $store->max_delivery_distance }}</td>
-                                    </tr>
+{{--                                    <tr>--}}
+{{--                                        <td class="fw-bold border-0">{{ __('labels.order_preparation_time') }}</td>--}}
+{{--                                        <td class="border-0">{{ $store->order_preparation_time }}</td>--}}
+{{--                                    </tr>--}}
+{{--                                    <tr>--}}
+{{--                                        <td class="fw-bold border-0">{{ __('labels.max_delivery_distance') }}</td>--}}
+{{--                                        <td class="border-0">{{ $store->max_delivery_distance }}</td>--}}
+{{--                                    </tr>--}}
                                     <tr>
                                         <td class="fw-bold border-0">{{ __('labels.store_status') }}</td>
                                         <td class="border-0">

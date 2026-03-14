@@ -411,6 +411,7 @@ function initializeVariantAttributes() {
 
                 if (matchingVariant) {
                     // Update variant details
+                    matchingVariant.db_id = serverVariant.id || null;
                     matchingVariant.title = serverVariant.title || '';
                     matchingVariant.weight = serverVariant.weight || '';
                     matchingVariant.height = serverVariant.height || '';
@@ -578,7 +579,7 @@ function renderVariants() {
         <div class="card border h-100">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h6 class="card-title mb-0">
+                    <h6 class="card-title mb-0">${v.db_id ? `<span class="badge">#${v.db_id}</span>` : ''}
                         ${Object.entries(v.attributes).map(([attrId, valueId]) => {
             const attr = attrIdMap[attrId];
             const attrName = attr ? attr.name : attrId;
@@ -858,6 +859,7 @@ function generateVariants() {
             // Create new variant
             return {
                 id: `v_${Date.now()}_${i}`,
+                db_id: null,
                 attributes: combo,
                 title: '',
                 weight: '',
@@ -951,7 +953,7 @@ function initializeSimplePricing() {
                 <div class="accordion-item store-pricing-card" data-store-id="${store.id}">
                     <h2 class="accordion-header bg-body-tertiary">
                         <button class="accordion-button d-flex align-items-center ${index === 0 ? '' : 'collapsed'}" type="button" data-bs-toggle="collapse" data-bs-target="#simple-store-${store.id}" aria-expanded="${index === 0 ? 'true' : 'false'}" aria-controls="simple-store-${store.id}">
-                            <span class="fw-medium text-dark">${store.name}</span>
+                            <span class="fw-medium">${store.name}</span>
                             <button type="button" class="btn btn-outline-danger btn-icon btn-sm remove-store-pricing me-3">
                                 <i class="ti ti-trash fs-2 p-1"></i>
                             </button>
@@ -1049,7 +1051,7 @@ function updateVariantPricing() {
                 <div class="accordion-item store-pricing-card" data-store-id="${store.id}">
                     <h2 class="accordion-header bg-body-tertiary">
                         <button class="accordion-button d-flex align-items-center ${index === 0 ? '' : 'collapsed'}" type="button" data-bs-toggle="collapse" data-bs-target="#store-${store.id}" aria-expanded="${index === 0 ? 'true' : 'false'}" aria-controls="store-${store.id}">
-                            <span class="fw-medium text-dark">${store.name}</span>
+                            <span class="fw-medium">${store.name}</span>
                             <button type="button" class="btn btn-outline-danger btn-icon btn-sm remove-store-pricing me-3">
                                 <i class="ti ti-trash fs-2 p-1"></i>
                             </button>
@@ -1527,7 +1529,7 @@ $(document).ready(function () {
     }
 
     // Reload table when filters change
-    $('#productVerificationStatusFilter, #productStatusFilter, #productTypeFilter, #productCategoryFilter').on('change', function () {
+    $('#productVerificationStatusFilter, #productStatusFilter, #productTypeFilter, #productCategoryFilter, #productFilter').on('change', function () {
         table.ajax.reload(null, false);
     });
     $('#faqStatusFilter, [name=\'product_id_filter\']').on('change', function () {
@@ -1542,6 +1544,7 @@ $(document).ready(function () {
 
     $('#products-table').on('preXhr.dt', function (e, settings, data) {
         data.product_type = $('#productTypeFilter').val();
+        data.product_filter = $('#productFilter').val();
         data.product_status = $('#productStatusFilter').val();
         data.verification_status = $('#productVerificationStatusFilter').val();
         data.category_id = $('#productCategoryFilter').val();

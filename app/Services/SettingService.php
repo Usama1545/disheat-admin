@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\SettingTypeEnum;
 use App\Http\Resources\Setting\DeliveryBoySettingResource;
+use App\Http\Resources\Setting\SellerSettingResource;
 use App\Http\Resources\Setting\AppSettingResource;
 use App\Http\Resources\Setting\AuthenticationSettingResource;
 use App\Http\Resources\Setting\HomeGeneralSettingResource;
@@ -78,6 +79,7 @@ class SettingService
             'notification' => new NotificationSettingResource($setting),
             'authentication' => new AuthenticationSettingResource($setting),
             'delivery_boy' => new DeliveryBoySettingResource($setting),
+            'seller' => new SellerSettingResource($setting),
             'home_general_settings' => new HomeGeneralSettingResource($setting),
             default => throw new \InvalidArgumentException("Unsupported setting type: {$setting->variable}")
         };
@@ -178,6 +180,7 @@ class SettingService
             'notification' => new NotificationSettingResource($setting),
             'authentication' => new AuthenticationSettingResource($setting),
             'delivery_boy' => new DeliveryBoySettingResource($setting),
+            'seller' => new SellerSettingResource($setting),
             'home_general_settings' => new HomeGeneralSettingResource($setting),
             default => null
         };

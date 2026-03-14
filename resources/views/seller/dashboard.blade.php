@@ -223,7 +223,7 @@
                                     </div>
                                     <div class="col">
                                         <div
-                                            class="font-weight-medium">{{ $salesData['total_sales'] }} {{ __('labels.sales') }}</div>
+                                            class="font-weight-medium">{{ $salesData['total_sales'] }} {{ __('labels.items_sold') }}</div>
                                         <div class="text-secondary">{{ $salesData['unsettled_payments'] }}
                                             {{ $salesData['unsettled_payments'] != 1 ? __('labels.unsettled_payments') : __('labels.unsettled_payment') }}</div>
                                     </div>

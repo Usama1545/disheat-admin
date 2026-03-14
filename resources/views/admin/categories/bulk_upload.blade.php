@@ -1,4 +1,4 @@
-@extends('layouts.admin.app', ['page' => $menuAdmin['categories']['active'] ?? ""])
+@extends('layouts.admin.app', ['page' => $menuAdmin['categories']['active'] ?? "", 'sub_page' => $menuAdmin['categories']['route']['bulk_upload']['sub_active']])
 
 @section('title', __('labels.bulk_upload_categories'))
 

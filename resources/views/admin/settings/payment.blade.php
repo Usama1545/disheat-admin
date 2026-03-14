@@ -1,16 +1,12 @@
-@php
-    use App\Enums\Payment\FlutterwaveCurrencyCodeEnum;
-    use App\Enums\Payment\PaymentTypeEnum;
-    use App\Enums\Payment\PaystackCurrencyCodeEnum;
-@endphp
-@extends('layouts.admin.app', ['page' => $menuAdmin['settings']['active'] ?? '', 'sub_page' => $menuAdmin['settings']['route']['payment']['sub_active'] ?? ''])
+@php use App\Enums\Payment\FlutterwaveCurrencyCodeEnum;use App\Enums\Payment\PaymentTypeEnum;use App\Enums\Payment\PaystackCurrencyCodeEnum; @endphp
+@extends('layouts.admin.app', ['page' => $menuAdmin['settings']['active'] ?? "", 'sub_page' => $menuAdmin['settings']['route']['payment']['sub_active'] ?? "" ])
 
 @section('title', __('labels.payment_settings'))
 
 @section('header_data')
     @php
         $page_title = __('labels.payment_settings');
-        $page_pretitle = __('labels.admin') . ' ' . __('labels.settings');
+        $page_pretitle = __('labels.admin') . " " . __('labels.settings');
     @endphp
 @endsection
 
@@ -27,7 +23,7 @@
         <div class="row g-2 align-items-center">
             <div class="col">
                 <h2 class="page-title">{{ __('labels.payment_settings') }}</h2>
-                <x-breadcrumb :items="$breadcrumbs" />
+                <x-breadcrumb :items="$breadcrumbs"/>
             </div>
         </div>
     </div>
@@ -40,9 +36,9 @@
                         <h3>{{ __('labels.menu') }}</h3>
                         <nav class="nav nav-vertical nav-pills" id="pills">
                             <a class="nav-link" href="#pills-stripe">{{ __('labels.stripe_payment') }}</a>
-                            {{-- <a class="nav-link" href="#pills-razorpay">{{ __('labels.razorpay_payment') }}</a>
+                            <a class="nav-link" href="#pills-razorpay">{{ __('labels.razorpay_payment') }}</a>
                             <a class="nav-link" href="#pills-paystack">{{ __('labels.paystack_payment') }}</a>
-                            <a class="nav-link" href="#pills-flutterwave">{{ __('labels.flutterwave_payment') }}</a> --}}
+                            <a class="nav-link" href="#pills-flutterwave">{{ __('labels.flutterwave_payment') }}</a>
                             <a class="nav-link" href="#pills-wallet">{{ __('labels.wallet_payment') }}</a>
                             <a class="nav-link" href="#pills-cod">{{ __('labels.cash_on_delivery') }}</a>
                         </nav>
@@ -64,28 +60,26 @@
                                                 <span class="col">{{ __('labels.enable_stripe_payment') }}</span>
                                                 <span class="col-auto">
                                                     <label class="form-check form-check-single form-switch">
-                                                        <input class="form-check-input" type="checkbox" name="stripePayment"
-                                                            value="1"
-                                                            {{ isset($settings['stripePayment']) && $settings['stripePayment'] ? 'checked' : '' }} />
+                                                        <input class="form-check-input" type="checkbox"
+                                                               name="stripePayment" value="1" {{ isset($settings['stripePayment']) && $settings['stripePayment'] ? 'checked' : '' }} />
                                                     </label>
                                                 </span>
                                             </label>
                                         </div>
                                         <div id="stripeFields"
-                                            style="{{ isset($settings['stripePayment']) && $settings['stripePayment'] ? 'display: block;' : 'display: none;' }}">
+                                             style="{{ isset($settings['stripePayment']) && $settings['stripePayment'] ? 'display: block;' : 'display: none;' }}">
                                             <div class="mb-3">
                                                 <label
                                                     class="form-label required">{{ __('labels.stripe_payment_mode') }}</label>
                                                 <select class="form-select" name="stripePaymentMode">
-                                                    <option value="" disabled
-                                                        {{ !isset($settings['stripePaymentMode']) ? 'selected' : '' }}>
-                                                        {{ __('labels.stripe_payment_mode_placeholder') }}</option>
-                                                    <option value="test"
-                                                        {{ isset($settings['stripePaymentMode']) && $settings['stripePaymentMode'] === 'test' ? 'selected' : '' }}>
+                                                    <option value=""
+                                                            disabled {{ !isset($settings['stripePaymentMode']) ? 'selected' : '' }}>{{ __('labels.stripe_payment_mode_placeholder') }}</option>
+                                                    <option
+                                                        value="test" {{ isset($settings['stripePaymentMode']) && $settings['stripePaymentMode'] === 'test' ? 'selected' : '' }}>
                                                         Test
                                                     </option>
-                                                    <option value="live"
-                                                        {{ isset($settings['stripePaymentMode']) && $settings['stripePaymentMode'] === 'live' ? 'selected' : '' }}>
+                                                    <option
+                                                        value="live" {{ isset($settings['stripePaymentMode']) && $settings['stripePaymentMode'] === 'live' ? 'selected' : '' }}>
                                                         Live
                                                     </option>
                                                 </select>
@@ -94,47 +88,48 @@
                                                 <label
                                                     class="form-label required">{{ __('labels.stripe_publishable_key') }}</label>
                                                 <input type="text" class="form-control" name="stripePublishableKey"
-                                                    placeholder="{{ __('labels.stripe_publishable_key_placeholder') }}"
-                                                    value="{{ $settings['stripePublishableKey'] ?? '' }}" />
+                                                       placeholder="{{ __('labels.stripe_publishable_key_placeholder') }}"
+                                                       value="{{ $settings['stripePublishableKey'] ?? '' }}"/>
                                             </div>
                                             <div class="mb-3">
                                                 <label
                                                     class="form-label required">{{ __('labels.stripe_secret_key') }}</label>
                                                 <input type="text" class="form-control" name="stripeSecretKey"
-                                                    placeholder="{{ __('labels.stripe_secret_key_placeholder') }}"
-                                                    value="{{ $systemSettings['demoMode'] ?? false ? Str::mask($settings['stripeSecretKey'] ?? '****', '****', 3, 8) : $settings['stripeSecretKey'] ?? '' }}" />
+                                                       placeholder="{{ __('labels.stripe_secret_key_placeholder') }}"
+                                                       value="{{ ($systemSettings['demoMode'] ?? false) ? Str::mask(($settings['stripeSecretKey'] ?? '****'), '****', 3, 8) : ($settings['stripeSecretKey'] ?? '') }}"/>
                                             </div>
                                             <div class="mb-3">
                                                 <label
                                                     class="form-label required">{{ __('labels.stripe_payment_endpoint_url') }}</label>
-                                                <input type="url" class="form-control" name="stripePaymentEndpointUrl"
-                                                    placeholder="{{ __('labels.stripe_payment_endpoint_url_placeholder') }}"
-                                                    value="{{ $settings['stripePaymentEndpointUrl'] ?? '' }}" />
+                                                <input type="url" class="form-control"
+                                                       name="stripePaymentEndpointUrl"
+                                                       placeholder="{{ __('labels.stripe_payment_endpoint_url_placeholder') }}"
+                                                       value="{{ $settings['stripePaymentEndpointUrl'] ?? '' }}"/>
                                             </div>
                                             <div class="mb-3">
                                                 <label
                                                     class="form-label required">{{ __('labels.stripe_webhook_secret_key') }}</label>
-                                                <input type="text" class="form-control" name="stripeWebhookSecretKey"
-                                                    placeholder="{{ __('labels.stripe_webhook_secret_key_placeholder') }}"
-                                                    value="{{ $settings['stripeWebhookSecretKey'] ?? '' }}" />
+                                                <input type="text" class="form-control"
+                                                       name="stripeWebhookSecretKey"
+                                                       placeholder="{{ __('labels.stripe_webhook_secret_key_placeholder') }}"
+                                                       value="{{ $settings['stripeWebhookSecretKey'] ?? '' }}"/>
                                             </div>
                                             <div class="mb-3">
                                                 <label
                                                     class="form-label required">{{ __('labels.stripe_currency_code') }}</label>
                                                 <select class="form-select" name="stripeCurrencyCode">
-                                                    <option value="" disabled
-                                                        {{ !isset($settings['stripeCurrencyCode']) ? 'selected' : '' }}>
-                                                        {{ __('labels.stripe_currency_code_placeholder') }}</option>
-                                                    <option value="USD"
-                                                        {{ isset($settings['stripeCurrencyCode']) && $settings['stripeCurrencyCode'] === 'USD' ? 'selected' : '' }}>
+                                                    <option value=""
+                                                            disabled {{ !isset($settings['stripeCurrencyCode']) ? 'selected' : '' }}>{{ __('labels.stripe_currency_code_placeholder') }}</option>
+                                                    <option
+                                                        value="USD" {{ isset($settings['stripeCurrencyCode']) && $settings['stripeCurrencyCode'] === 'USD' ? 'selected' : '' }}>
                                                         USD
                                                     </option>
-                                                    <option value="EUR"
-                                                        {{ isset($settings['stripeCurrencyCode']) && $settings['stripeCurrencyCode'] === 'EUR' ? 'selected' : '' }}>
+                                                    <option
+                                                        value="EUR" {{ isset($settings['stripeCurrencyCode']) && $settings['stripeCurrencyCode'] === 'EUR' ? 'selected' : '' }}>
                                                         EUR
                                                     </option>
-                                                    <option value="GBP"
-                                                        {{ isset($settings['stripeCurrencyCode']) && $settings['stripeCurrencyCode'] === 'GBP' ? 'selected' : '' }}>
+                                                    <option
+                                                        value="GBP" {{ isset($settings['stripeCurrencyCode']) && $settings['stripeCurrencyCode'] === 'GBP' ? 'selected' : '' }}>
                                                         GBP
                                                     </option>
                                                     <!-- Add more currencies as per StripeCurrencyCodeEnum -->
@@ -143,7 +138,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                {{-- <div class="card mb-4" id="pills-razorpay">
+                                <div class="card mb-4" id="pills-razorpay">
                                     <div class="card-header">
                                         <h4 class="card-title">{{ __('labels.razorpay_payment') }}</h4>
                                     </div>
@@ -260,7 +255,7 @@
                                                 <label
                                                     class="form-label required">{{ __('labels.paystack_currency_code') }}</label>
                                                 <select class="form-select" name="paystackCurrencyCode">
-                                                    @foreach (PaystackCurrencyCodeEnum::values() as $value)
+                                                    @foreach(PaystackCurrencyCodeEnum::values() as $value)
                                                         <option
                                                             value="{{ $value }}" {{ isset($settings['paystackCurrencyCode']) && $settings['paystackCurrencyCode'] === $value ? 'selected' : '' }}>
                                                             {{ $value }}
@@ -354,7 +349,7 @@
                                                 <label
                                                     class="form-label required">{{ __('labels.flutterwave_currency_code') }}</label>
                                                 <select class="form-select" name="flutterwaveCurrencyCode">
-                                                    @foreach (FlutterwaveCurrencyCodeEnum::values() as $value)
+                                                    @foreach(FlutterwaveCurrencyCodeEnum::values() as $value)
                                                         <option value="{{ $value }}"
                                                             {{ isset($settings['flutterwaveCurrencyCode']) && $settings['flutterwaveCurrencyCode'] === $value ? 'selected' : '' }}>
                                                             {{ __('labels.currency_data.' . $value) }}
@@ -374,7 +369,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                </div> --}}
+                                </div>
                                 <div class="card mb-4" id="pills-wallet">
                                     <div class="card-header">
                                         <h4 class="card-title">{{ __('labels.wallet_payment') }}</h4>
@@ -386,8 +381,8 @@
                                                 <span class="col-auto">
                                                     <label class="form-check form-check-single form-switch">
                                                         <input class="form-check-input" type="checkbox"
-                                                            name="walletPayment" value="1"
-                                                            {{ isset($settings['walletPayment']) && $settings['walletPayment'] ? 'checked' : '' }} />
+                                                               name="walletPayment"
+                                                               value="1" {{ isset($settings['walletPayment']) && $settings['walletPayment'] ? 'checked' : '' }} />
                                                     </label>
                                                 </span>
                                                 <small
@@ -407,8 +402,8 @@
                                                 <span class="col-auto">
                                                     <label class="form-check form-check-single form-switch">
                                                         <input class="form-check-input" type="checkbox"
-                                                            name="{{ PaymentTypeEnum::COD() }}" value="1"
-                                                            {{ isset($settings['cod']) && $settings['cod'] ? 'checked' : '' }} />
+                                                               name="{{PaymentTypeEnum::COD()}}"
+                                                               value="1" {{ isset($settings['cod']) && $settings['cod'] ? 'checked' : '' }} />
                                                     </label>
                                                 </span>
                                             </label>
@@ -419,7 +414,7 @@
                                     <div class="d-flex">
                                         @can('updateSetting', [\App\Models\Setting::class, 'payment'])
                                             <button type="submit"
-                                                class="btn btn-primary ms-auto">{{ __('labels.submit') }}</button>
+                                                    class="btn btn-primary ms-auto">{{ __('labels.submit') }}</button>
                                         @endcan
                                     </div>
                                 </div>

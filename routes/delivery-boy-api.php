@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\DeliveryBoy\DeliveryBoyOrderApiController;
 use App\Http\Controllers\Api\DeliveryBoy\DeliveryBoyReturnPickupApiController;
 use App\Http\Controllers\Api\DeliveryBoy\DeliveryBoyWithdrawalApiController;
 use App\Http\Controllers\Api\DeliveryFeedbackApiController;
+use App\Http\Controllers\Api\DeliveryBoy\DeliveryBoyNotificationApiController;
 use App\Http\Middleware\ActiveDeliveryBoy;
 use App\Http\Middleware\VerifiedDeliveryBoy;
 use Illuminate\Support\Facades\Route;
@@ -29,6 +30,15 @@ Route::middleware('auth:sanctum')->prefix('delivery-boy')->group(function () {
         Route::post('update-current-location', [DeliveryBoyAuthApiController::class, 'updateCurrentLocation'])->name('update-location');
         Route::get('get-last-location', [DeliveryBoyAuthApiController::class, 'getLastLocation'])->name('get-last-location');
         Route::get('home', [DeliveryBoyHomeController::class, 'index'])->name('home');
+
+        // Notifications (delivery boy)
+        Route::prefix('notifications')->group(function () {
+            Route::get('/', [DeliveryBoyNotificationApiController::class, 'index']);
+            Route::get('/unread-count', [DeliveryBoyNotificationApiController::class, 'unreadCount']);
+            Route::post('/mark-all-read', [DeliveryBoyNotificationApiController::class, 'markAllAsRead']);
+            Route::post('/{id}/read', [DeliveryBoyNotificationApiController::class, 'markAsRead']);
+            Route::post('/{id}/unread', [DeliveryBoyNotificationApiController::class, 'markAsUnread']);
+        });
 
         // Order routes (requires an active delivery boy)
         Route::middleware('active.delivery.boy')->group(function () {

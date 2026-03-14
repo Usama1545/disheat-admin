@@ -273,6 +273,32 @@
                 </div>
             </div>
             @endcan
+            @can('viewSetting', [\App\Models\Setting::class, 'seller'])
+            <div class="col-md-6 col-lg-4">
+                <div class="card">
+                    <a href="{{route('admin.settings.show', ['setting' => 'seller'])}}" class="card-link">
+                        <div class="card-stamp">
+                            <div class="card-stamp-icon bg-primary">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                     stroke-linejoin="round"
+                                     class="icon icon-tabler icons-tabler-outline icon-tabler-building-store">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                    <path d="M3 21v-10l9 -4l9 4v10"/>
+                                    <path d="M13 13h4v8h-10v-6h6v6"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="card-body py-5">
+                            <h3 class="card-title">{{ __('labels.seller_settings') ?? 'Seller Settings' }}</h3>
+                            <p class="text-secondary">
+                                {{ __('labels.seller_settings_description') ?? 'Configure seller policies like Terms & Conditions and Privacy Policy.' }}
+                            </p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+            @endcan
             @can('viewSetting', [\App\Models\Setting::class, 'home_general_settings'])
             <div class="col-md-6 col-lg-4">
                 <div class="card">

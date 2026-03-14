@@ -4,36 +4,35 @@ namespace App\Models;
 
 use App\Enums\NotificationTypeEnum;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Notifications\DatabaseNotification as BaseDatabaseNotification;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Carbon;
 
 /**
  * @method static create(array $data)
  * @method static find($id)
  * @method static where(string $column, mixed $value)
  */
-class Notification extends Model
+/**
+ * Backward-compatible wrapper around Laravel's DatabaseNotification.
+ *
+ * This keeps the existing App\Models\Notification API mostly intact while
+ * persisting notifications in the default `notifications` table using the
+ * built-in Database channel columns: id, type, notifiable_type, notifiable_id,
+ * data (json), read_at, timestamps.
+ */
+class Notification extends BaseDatabaseNotification
 {
     use HasFactory;
 
-    protected $fillable = [
-        'user_id',
-        'store_id',
-        'order_id',
-        'type',
-        'sent_to',
-        'title',
-        'message',
-        'is_read',
-        'metadata',
-    ];
+    protected $table = 'notifications';
 
     protected $casts = [
-        'type' => NotificationTypeEnum::class,
-        'is_read' => 'boolean',
-        'metadata' => 'array',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'read_at' => 'datetime',
+        'data' => 'array',
     ];
 
     /**
@@ -41,7 +40,9 @@ class Notification extends Model
      */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        // Legacy helper: maps to notifiable when it's a User
+        return $this->belongsTo(User::class, 'notifiable_id')
+            ->where('notifiable_type', User::class);
     }
 
     /**
@@ -49,7 +50,7 @@ class Notification extends Model
      */
     public function store(): BelongsTo
     {
-        return $this->belongsTo(Store::class);
+        return $this->belongsTo(Store::class, 'store_id');
     }
 
     /**
@@ -57,7 +58,7 @@ class Notification extends Model
      */
     public function order(): BelongsTo
     {
-        return $this->belongsTo(Order::class);
+        return $this->belongsTo(Order::class, 'order_id');
     }
 
     /**
@@ -65,7 +66,7 @@ class Notification extends Model
      */
     public function scopeUnread($query)
     {
-        return $query->where('is_read', false);
+        return $query->whereNull('read_at');
     }
 
     /**
@@ -73,7 +74,7 @@ class Notification extends Model
      */
     public function scopeRead($query)
     {
-        return $query->where('is_read', true);
+        return $query->whereNotNull('read_at');
     }
 
     /**
@@ -81,7 +82,8 @@ class Notification extends Model
      */
     public function scopeOfType($query, NotificationTypeEnum $type)
     {
-        return $query->where('type', $type);
+        // Stored as string in `type` column
+        return $query->where('type', $type->value ?? (string)$type);
     }
 
     /**
@@ -89,7 +91,8 @@ class Notification extends Model
      */
     public function scopeSentTo($query, string $sentTo)
     {
-        return $query->where('sent_to', $sentTo);
+        // `sent_to` is stored inside JSON `data`
+        return $query->where('data->sent_to', $sentTo);
     }
 
     /**
@@ -97,7 +100,7 @@ class Notification extends Model
      */
     public function markAsRead(): bool
     {
-        return $this->update(['is_read' => true]);
+        return $this->forceFill(['read_at' => now()])->save();
     }
 
     /**
@@ -105,6 +108,51 @@ class Notification extends Model
      */
     public function markAsUnread(): bool
     {
-        return $this->update(['is_read' => false]);
+        return $this->forceFill(['read_at' => null])->save();
+    }
+
+    // -----------------------
+    // Legacy attribute helpers
+    // -----------------------
+
+    public function getIsReadAttribute(): bool
+    {
+        return !is_null($this->read_at);
+    }
+
+    public function getTitleAttribute(): ?string
+    {
+        return Arr::get($this->data ?? [], 'title');
+    }
+
+    public function getMessageAttribute(): ?string
+    {
+        return Arr::get($this->data ?? [], 'message');
+    }
+
+    public function getMetadataAttribute(): ?array
+    {
+        return Arr::get($this->data ?? [], 'metadata');
+    }
+
+    public function getSentToAttribute(): ?string
+    {
+        return Arr::get($this->data ?? [], 'sent_to');
+    }
+
+    public function getStoreIdAttribute(): ?int
+    {
+        return Arr::get($this->data ?? [], 'store_id');
+    }
+
+    public function getOrderIdAttribute(): ?int
+    {
+        return Arr::get($this->data ?? [], 'order_id');
+    }
+
+    public function getUserIdAttribute(): ?int
+    {
+        // Prefer explicit user_id in data; fallback to notifiable_id when type is User
+        return Arr::get($this->data ?? [], 'user_id', $this->notifiable_type === User::class ? (int) $this->notifiable_id : null);
     }
 }

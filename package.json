@@ -14,7 +14,7 @@
         "tailwindcss": "^4.0.0",
         "vite": "^6.3.5"
     },
-    "name": "disheat-laravel",
+    "name": "hyperlocal-laravel",
     "version": "1.0.0",
     "description": "<p align=\"center\"><a href=\"https://laravel.com\" target=\"_blank\"><img src=\"https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg\" width=\"400\" alt=\"Laravel Logo\"></a></p>",
     "main": "vite.config.js",
@@ -86,5 +86,16 @@
         "y18n": "^5.0.8",
         "yargs": "^17.7.2",
         "yargs-parser": "^21.1.1"
-    }
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Infinitietechnologies/hyperlocal-laravel.git"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/Infinitietechnologies/hyperlocal-laravel/issues"
+    },
+    "homepage": "https://github.com/Infinitietechnologies/hyperlocal-laravel#readme"
 }

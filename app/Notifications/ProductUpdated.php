@@ -3,7 +3,6 @@
 namespace App\Notifications;
 
 use App\Events\Product\ProductAfterUpdate;
-use App\Models\Notification as NotificationModel;
 use App\Enums\NotificationTypeEnum;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -85,24 +84,21 @@ class ProductUpdated extends Notification implements ShouldQueue
     {
         $product = $this->event->product;
 
-        // Store in custom notifications table
-        NotificationModel::create([
-            'user_id' => $notifiable->id,
-            'store_id' => $product->seller_id, // assuming seller_id is the store
-            'type' => NotificationTypeEnum::PRODUCT,
-            'sent_to' => $this->sentTo,
+        return [
             'title' => 'Product Updated',
             'message' => 'The product "' . $product->title . '" has been updated.',
-            'is_read' => false,
+            'type' => NotificationTypeEnum::PRODUCT,
+            'sent_to' => $this->sentTo ?? 'admin',
+            'user_id' => $notifiable->id,
+            'store_id' => $product->seller_id,
+            'order_id' => null,
             'metadata' => [
                 'product_id' => $product->id,
                 'product_title' => $product->title,
                 'product_price' => $product->price,
                 'product_status' => $product->status,
                 'seller_id' => $product->seller_id,
-            ]
-        ]);
-
-        return $this->toArray($notifiable);
+            ],
+        ];
     }
 }

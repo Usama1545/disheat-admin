@@ -76,7 +76,7 @@ class DeliveryBoyAuthApiController extends Controller
                 'verification_status' => DeliveryBoyVerificationStatusEnum::PENDING(),
             ]);
             $this->handleMediaUploads($deliveryBoy, $request);
-
+            $this->storeFcmToken($request, $user);
             DB::commit();
             // Dispatch the event
             event(new DeliveryBoyRegistered($user, $deliveryBoy));
@@ -160,6 +160,7 @@ class DeliveryBoyAuthApiController extends Controller
                     ]
                 );
             }
+            $this->storeFcmToken($request, $user);
 
             $token = $user->createToken($user->email)->plainTextToken;
 

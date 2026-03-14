@@ -460,7 +460,7 @@ class OrderService
             'currency_rate' => 1, // This should be dynamic based on settings
             'payment_method' => $data['payment_type'],
             'payment_status' => PaymentStatusEnum::PENDING(),
-            'fulfillment_type' => 'disheat',
+            'fulfillment_type' => 'hyperlocal',
             'is_rush_order' => (bool)$data['rush_delivery'] ?? false,
             'estimated_delivery_time' => $paymentSummary['estimated_delivery_time'] ?? null,
             'delivery_time_slot_id' => $data['delivery_time_slot_id'] ?? null,
@@ -1069,7 +1069,6 @@ class OrderService
                 'user_id' => $userId,
                 'error' => $e->getMessage()
             ]);
-
             return [
                 'success' => false,
                 'message' => __('messages.order_status_update_failed'),

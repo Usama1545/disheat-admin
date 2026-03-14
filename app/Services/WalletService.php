@@ -467,4 +467,86 @@ class WalletService
             ];
         }
     }
+
+    /**
+     * Finalize a pending wallet deposit manually by admin (complete or fail)
+     *
+     * @param int $transactionId
+     * @param bool $approve true to complete, false to fail
+     * @param string|null $adminNote optional description/note to store
+     * @return array
+     */
+    public function finalizeDeposit(int $transactionId, bool $approve, ?string $adminNote = null): array
+    {
+        try {
+            DB::beginTransaction();
+
+            $transaction = WalletTransaction::query()
+                ->where('id', $transactionId)
+                ->where('transaction_type', WalletTransactionTypeEnum::DEPOSIT())
+                ->first();
+
+            if (!$transaction) {
+                DB::rollBack();
+                return [
+                    'success' => false,
+                    'message' => __('labels.wallet_transaction_not_found'),
+                    'data' => []
+                ];
+            }
+
+            if ($transaction->status !== WalletTransactionStatusEnum::PENDING()) {
+                DB::rollBack();
+                return [
+                    'success' => false,
+                    'message' => __('labels.transaction_already_processed'),
+                    'data' => []
+                ];
+            }
+
+            // Append admin note to description if provided
+            if (!empty($adminNote)) {
+                $transaction->description = trim(($transaction->description ?? '') . "\nAdmin: " . $adminNote);
+            }
+
+            if ($approve) {
+                // credit wallet balance
+                $wallet = Wallet::where('id', $transaction->wallet_id)->first();
+                if (!$wallet) {
+                    DB::rollBack();
+                    return [
+                        'success' => false,
+                        'message' => __('labels.wallet_not_found'),
+                        'data' => []
+                    ];
+                }
+
+                $wallet->balance = (float)$wallet->balance + (float)$transaction->amount;
+                $wallet->save();
+                $transaction->status = WalletTransactionStatusEnum::COMPLETED();
+            } else {
+                $transaction->status = WalletTransactionStatusEnum::FAILED();
+            }
+
+            $transaction->save();
+
+            DB::commit();
+
+            return [
+                'success' => true,
+                'message' => $approve ? __('labels.wallet_recharge_success') : __('labels.wallet_recharge_failed'),
+                'data' => [
+                    'transaction' => $transaction
+                ]
+            ];
+        } catch (Exception $e) {
+            DB::rollBack();
+            Log::error('Error finalizing wallet deposit: ' . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => __('labels.something_went_wrong'),
+                'data' => ['error' => $e->getMessage()]
+            ];
+        }
+    }
 }

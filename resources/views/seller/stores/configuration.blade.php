@@ -1,3 +1,4 @@
+@php use App\Enums\Store\StoreStatusEnum; @endphp
 @extends('layouts.seller.app', ['page' => $menuSeller['stores']['active'] ?? ""])
 
 @section('title', __('labels.store_configuration'))
@@ -29,7 +30,7 @@
                             <h3>{{ __('labels.menu') }}</h3>
                             <nav class="nav nav-vertical nav-pills" id="pills">
                                 <a class="nav-link" href="#pills-scheduling">{{ __('labels.scheduling') }}</a>
-{{--                                <a class="nav-link" href="#pills-delivery">{{ __('labels.delivery_settings') }}</a>--}}
+                                {{--                                <a class="nav-link" href="#pills-delivery">{{ __('labels.delivery_settings') }}</a>--}}
                                 <a class="nav-link" href="#pills-store">{{ __('labels.store_information') }}</a>
                                 <a class="nav-link" href="#pills-policies">{{ __('labels.policies') }}</a>
                                 <a class="nav-link" href="#pills-metadata">{{ __('labels.metadata') }}</a>
@@ -51,7 +52,8 @@
                                                 </div>
                                                 <div class="card-body">
                                                     <div class="mb-3">
-                                                        <label class="form-label required">{{ __('labels.timing') }}</label>
+                                                        <label
+                                                            class="form-label required">{{ __('labels.timing') }}</label>
                                                         <input type="text" class="form-control" name="timing"
                                                                placeholder="{{ __('labels.enter_timing') }}"
                                                                value="{{ $store->timing ?? '' }}"/>
@@ -66,56 +68,58 @@
                                                     </div>
 
                                                     <div class="mb-3">
-                                                        <label class="form-label required">{{ __('labels.store_status') }}</label>
-                                                        <select class="form-select" name="status" required>
+                                                        <label
+                                                            class="form-label required">{{ __('labels.store_status') }}</label>
+                                                        <select class="form-select text-capitalize" name="status" required>
                                                             <option value="">{{ __('labels.select_status') }}</option>
-                                                            <option value="online" {{ old('status', $store->status?->value ?? 'online') === 'online' ? 'selected' : '' }}>
-                                                                {{ __('labels.online') }}
-                                                            </option>
-                                                            <option value="offline" {{ old('status', $store->status?->value ?? 'online') === 'offline' ? 'selected' : '' }}>
-                                                                {{ __('labels.offline') }}
-                                                            </option>
+                                                            @foreach(StoreStatusEnum::values() as $status)
+                                                                <option
+                                                                    value="{{$status}}" {{ $store->status == $status ? 'selected' : '' }}>
+                                                                    {{$status}}
+                                                                </option>
+                                                            @endforeach
                                                         </select>
-                                                        <div class="form-text">{{ __('labels.store_status_help') }}</div>
+                                                        <div
+                                                            class="form-text">{{ __('labels.store_status_help') }}</div>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
-{{--                                        <div class="col-md-6">--}}
+                                        {{--                                        <div class="col-md-6">--}}
 
-{{--                                            <!-- Delivery Settings -->--}}
-{{--                                            <div class="card mb-4" id="pills-delivery">--}}
-{{--                                                <div class="card-header">--}}
-{{--                                                    <h4 class="card-title">{{ __('labels.delivery_settings') }}</h4>--}}
-{{--                                                </div>--}}
-{{--                                                <div class="card-body">--}}
-{{--                                                    <div class="mb-3">--}}
-{{--                                                        <label--}}
-{{--                                                            class="form-label required">{{ __('labels.max_delivery_distance') }}</label>--}}
-{{--                                                        <input type="number"  min="0" class="form-control"--}}
-{{--                                                               name="max_delivery_distance"--}}
-{{--                                                               placeholder="{{ __('labels.enter_max_delivery_distance') }}"--}}
-{{--                                                               value="{{ old('max_delivery_distance', $store->max_delivery_distance ?? '') }}"/>--}}
-{{--                                                    </div>--}}
-{{--                                                    <div class="mb-3">--}}
-{{--                                                        <label--}}
-{{--                                                            class="form-label required">{{ __('labels.domestic_shipping_charges') }}</label>--}}
-{{--                                                        <input type="number"  min="0" step="0.01" class="form-control"--}}
-{{--                                                               name="domestic_shipping_charges"--}}
-{{--                                                               placeholder="{{ __('labels.enter_domestic_shipping_charges') }}"--}}
-{{--                                                               value="{{ old('domestic_shipping_charges', $store->domestic_shipping_charges ?? '') }}"/>--}}
-{{--                                                    </div>--}}
-{{--                                                    <div class="mb-3">--}}
-{{--                                                        <label--}}
-{{--                                                            class="form-label required">{{ __('labels.international_shipping_charges') }}</label>--}}
-{{--                                                        <input type="number"  min="0" step="0.01" class="form-control"--}}
-{{--                                                               name="international_shipping_charges"--}}
-{{--                                                               placeholder="{{ __('labels.enter_international_shipping_charges') }}"--}}
-{{--                                                               value="{{ old('international_shipping_charges', $store->international_shipping_charges ?? '') }}"/>--}}
-{{--                                                    </div>--}}
-{{--                                                </div>--}}
-{{--                                            </div>--}}
-{{--                                        </div>--}}
+                                        {{--                                            <!-- Delivery Settings -->--}}
+                                        {{--                                            <div class="card mb-4" id="pills-delivery">--}}
+                                        {{--                                                <div class="card-header">--}}
+                                        {{--                                                    <h4 class="card-title">{{ __('labels.delivery_settings') }}</h4>--}}
+                                        {{--                                                </div>--}}
+                                        {{--                                                <div class="card-body">--}}
+                                        {{--                                                    <div class="mb-3">--}}
+                                        {{--                                                        <label--}}
+                                        {{--                                                            class="form-label required">{{ __('labels.max_delivery_distance') }}</label>--}}
+                                        {{--                                                        <input type="number"  min="0" class="form-control"--}}
+                                        {{--                                                               name="max_delivery_distance"--}}
+                                        {{--                                                               placeholder="{{ __('labels.enter_max_delivery_distance') }}"--}}
+                                        {{--                                                               value="{{ old('max_delivery_distance', $store->max_delivery_distance ?? '') }}"/>--}}
+                                        {{--                                                    </div>--}}
+                                        {{--                                                    <div class="mb-3">--}}
+                                        {{--                                                        <label--}}
+                                        {{--                                                            class="form-label required">{{ __('labels.domestic_shipping_charges') }}</label>--}}
+                                        {{--                                                        <input type="number"  min="0" step="0.01" class="form-control"--}}
+                                        {{--                                                               name="domestic_shipping_charges"--}}
+                                        {{--                                                               placeholder="{{ __('labels.enter_domestic_shipping_charges') }}"--}}
+                                        {{--                                                               value="{{ old('domestic_shipping_charges', $store->domestic_shipping_charges ?? '') }}"/>--}}
+                                        {{--                                                    </div>--}}
+                                        {{--                                                    <div class="mb-3">--}}
+                                        {{--                                                        <label--}}
+                                        {{--                                                            class="form-label required">{{ __('labels.international_shipping_charges') }}</label>--}}
+                                        {{--                                                        <input type="number"  min="0" step="0.01" class="form-control"--}}
+                                        {{--                                                               name="international_shipping_charges"--}}
+                                        {{--                                                               placeholder="{{ __('labels.enter_international_shipping_charges') }}"--}}
+                                        {{--                                                               value="{{ old('international_shipping_charges', $store->international_shipping_charges ?? '') }}"/>--}}
+                                        {{--                                                    </div>--}}
+                                        {{--                                                </div>--}}
+                                        {{--                                            </div>--}}
+                                        {{--                                        </div>--}}
                                     </div>
                                     <!-- Store Information -->
                                     <div class="card mb-4" id="pills-store">
@@ -125,7 +129,8 @@
                                         <div class="card-body">
                                             <div class="mb-3">
                                                 <label class="form-label">{{ __('labels.description') }}</label>
-                                                <textarea class="hugerte-mytextarea" name="description">{{ old('description', $store->description ?? '') }}</textarea>
+                                                <textarea class="hugerte-mytextarea"
+                                                          name="description">{{ old('description', $store->description ?? '') }}</textarea>
                                             </div>
                                             <div class="mb-3">
                                                 <label class="form-label">{{ __('labels.about_us') }}</label>
@@ -180,7 +185,8 @@
                                             </div>
 
                                             <div class="mb-3">
-                                                <label class="form-label required">{{ __('labels.delivery_policy') }}</label>
+                                                <label
+                                                    class="form-label required">{{ __('labels.delivery_policy') }}</label>
                                                 <textarea class="hugerte-mytextarea" name="delivery_policy"
                                                           placeholder="{{ __('labels.enter_delivery_policy') }}">{{ old('delivery_policy', $store->delivery_policy ?? '') }}</textarea>
                                             </div>

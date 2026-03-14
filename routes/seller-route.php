@@ -11,6 +11,7 @@ use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProductConditionController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductFaqController;
+use App\Http\Controllers\ProductImageUploadController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReturnRequestController;
 use App\Http\Controllers\RoleController;
@@ -40,7 +41,7 @@ Route::prefix('seller')->name('seller.')->group(function () {
         Route::post('reset-password', [PasswordResetController::class, 'resetPassword'])->name('password.update');
     });
 
-    Route::middleware(['auth', 'validate.seller'])->group(function () {
+    Route::middleware(['seller.query.token', 'validate.seller'])->group(function () {
         Route::get('/', [DashboardController::class, 'index'])->name('index');
 
         Route::get('logout', [AuthController::class, 'logout'])->name('logout');
@@ -151,6 +152,14 @@ Route::prefix('seller')->name('seller.')->group(function () {
             Route::post('/', [ProductController::class, 'store'])->name('store');
             Route::get('/datatable', [ProductController::class, 'getProducts'])->name('datatable');
             Route::get('/search', [ProductController::class, 'search'])->name('search');
+            Route::get('/download-template', [ProductController::class, 'downloadTemplate'])->name('download-template');
+            // Bulk upload (Shopify-like CSV)
+            Route::get('/bulk-upload', [ProductController::class, 'bulkUploadPage'])->name('bulk-upload.page');
+            Route::post('/bulk-upload', [ProductController::class, 'bulkUpload'])->name('bulk-upload');
+            // Separate images ZIP upload for products/variants
+            Route::get('/images-upload', [ProductImageUploadController::class, 'imagesUploadPage'])->name('images-upload.page');
+            Route::post('/images-upload', [ProductImageUploadController::class, 'imagesUpload'])->name('images-upload');
+            Route::get('/images-upload/status/{token}', [ProductImageUploadController::class, 'imagesUploadStatus'])->name('images-upload.status');
             Route::get('/{id}/edit', [ProductController::class, 'edit'])->name('edit');
             Route::get('/{id}/pricing', [ProductController::class, 'getProductPricing'])->name('pricing');
             Route::post('/{id}', [ProductController::class, 'update'])->name('update');

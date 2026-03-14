@@ -9,10 +9,14 @@ use App\Http\Middleware\ValidateAdmin;
 use App\Http\Middleware\ValidateSeller;
 use App\Http\Middleware\VerifiedDeliveryBoy;
 use App\Http\Middleware\CheckMaintenanceMode;
+use App\Http\Middleware\SellerQueryTokenAuthenticate;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Laravel\Sanctum\PersonalAccessToken;
+use App\Http\Middleware\VerifyLicense;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -46,17 +50,20 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'validate.admin' => ValidateAdmin::class,
             'validate.seller' => ValidateSeller::class,
+            'seller.query.token' => SellerQueryTokenAuthenticate::class,
             'permission' => CheckPermission::class,
             'verified.delivery.boy' => VerifiedDeliveryBoy::class,
             'active.delivery.boy' => ActiveDeliveryBoy::class,
             'locale' => SetLocale::class,
             'storage.cors' => StorageCorsMiddleware::class,
             'maintenance' => CheckMaintenanceMode::class,
+            'license' => VerifyLicense::class,
         ]);
 
         $middleware->web(prepend: [
             CheckMaintenanceMode::class,
             CheckInstallation::class,
+            VerifyLicense::class,
         ], append: [
             SetLocale::class,
             StorageCorsMiddleware::class,
@@ -64,6 +71,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->api(prepend: [
             CheckMaintenanceMode::class,
+            VerifyLicense::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

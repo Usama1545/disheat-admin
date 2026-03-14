@@ -553,6 +553,87 @@
                             <textarea class="form-control hugerte-mytextarea" name="description"
                                       rows="5">{{ $product->description ?? "" }}</textarea>
                         </div>
+                        <!-- Custom Product Sections (User-friendly builder) -->
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label class="form-label mb-0">{{ __('labels.custom_product_sections') }}</label>
+                                <button type="button" class="btn btn-outline-primary" id="addSectionBtn">
+                                    <i class="ti ti-plus me-1"></i>{{ __('labels.add_section') }}
+                                </button>
+                            </div>
+                            <div id="customSectionsContainer" class="vstack gap-3">
+                                @php $sectionIndex = 0; @endphp
+                                @if(!empty($product) && $product->customProductSections)
+                                    @foreach($product->customProductSections as $sec)
+                                        <div class="card border section-item" data-index="{{ $sectionIndex }}">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <h4 class="mb-0">{{ __('labels.section') }} #<span class="section-number">{{ $sectionIndex + 1 }}</span></h4>
+                                                    <div class="d-flex gap-2">
+                                                        <button type="button" class="btn btn-outline-danger remove-section">{{ __('labels.remove') }}</button>
+                                                    </div>
+                                                </div>
+                                                <input type="hidden" name="custom_sections[{{ $sectionIndex }}][id]" value="{{ $sec->id }}">
+                                                <hr>
+                                                <div class="row g-2">
+                                                    <div class="col-md-4">
+                                                        <label class="form-label required">{{ __('labels.title') }}</label>
+                                                        <input type="text" class="form-control" name="custom_sections[{{ $sectionIndex }}][title]" value="{{ $sec->title }}">
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">{{ __('labels.description') }}</label>
+                                                        <input type="text" class="form-control" name="custom_sections[{{ $sectionIndex }}][description]" value="{{ $sec->description }}">
+                                                    </div>
+                                                    <div class="col-md-2">
+                                                        <label class="form-label">{{ __('labels.sort_order') }}</label>
+                                                        <input type="number" min="0" class="form-control" name="custom_sections[{{ $sectionIndex }}][sort_order]" value="{{ (int)($sec->sort_order ?? 0) }}">
+                                                    </div>
+                                                </div>
+                                                <div class="mt-3">
+                                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                                        <strong class="mb-0">{{ __('labels.fields') }}</strong>
+                                                        <button type="button" class="btn btn-outline-secondary add-field">{{ __('labels.add_field') }}</button>
+                                                    </div>
+                                                    <div class="vstack gap-2 fields-container">
+                                                        @php $fieldIndex = 0; @endphp
+                                                        @foreach(($sec->fields ?? []) as $fld)
+                                                            <div class="border rounded p-2 field-item" data-index="{{ $fieldIndex }}">
+                                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                                    <span>{{ __('labels.field') }} #<span class="field-number">{{ $fieldIndex + 1 }}</span></span>
+                                                                    <button type="button" class="btn btn-link text-danger p-0 remove-field">{{ __('labels.remove') }}</button>
+                                                                </div>
+                                                                <input type="hidden" name="custom_sections[{{ $sectionIndex }}][fields][{{ $fieldIndex }}][id]" value="{{ $fld->id }}">
+                                                                <div class="row g-2 align-items-end">
+                                                                    <div class="col-md-3">
+                                                                        <label class="form-label">{{ __('labels.title') }}</label>
+                                                                        <input type="text" class="form-control" name="custom_sections[{{ $sectionIndex }}][fields][{{ $fieldIndex }}][title]" value="{{ $fld->title }}">
+                                                                    </div>
+                                                                    <div class="col-md-4">
+                                                                        <label class="form-label">{{ __('labels.description') }}</label>
+                                                                        <input type="text" class="form-control" name="custom_sections[{{ $sectionIndex }}][fields][{{ $fieldIndex }}][description]" value="{{ $fld->description }}">
+                                                                    </div>
+                                                                    <div class="col-md-2">
+                                                                        <label class="form-label">{{ __('labels.sort_order') }}</label>
+                                                                        <input type="number" min="0" class="form-control" name="custom_sections[{{ $sectionIndex }}][fields][{{ $fieldIndex }}][sort_order]" value="{{ (int)($fld->pivot->sort_order ?? 0) }}">
+                                                                    </div>
+                                                                    <div class="col-md-3">
+                                                                        <label class="form-label">{{ __('labels.image') }}</label>
+                                                                        <input type="file" class="form-control field-image-input" name="custom_sections[{{ $sectionIndex }}][fields][{{ $fieldIndex }}][image]" data-image-url="{{ $fld->image }}">
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            @php $fieldIndex++; @endphp
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        @php $sectionIndex++; @endphp
+                                    @endforeach
+                                @endif
+                            </div>
+                            <small class="form-hint">{{ __('labels.custom_sections_hint') }}</small>
+                        </div>
                         <div class="mb-3">
                             <label class="form-label">{{ __('labels.tags') }}</label>
                             <select class="form-select product-tags" name="tags[]" multiple>
@@ -662,4 +743,142 @@
             };
         </script>
     @endif
+    <script>
+        document.addEventListener('DOMContentLoaded', function(){
+            const container = document.getElementById('customSectionsContainer');
+            const addSectionBtn = document.getElementById('addSectionBtn');
+
+            function initFilePondFor(input){
+                if (!window.FilePond || !input) return;
+                try {
+                    const imageUrl = input.getAttribute('data-image-url') || '';
+                    FilePond.create(input, {
+                        allowImagePreview: true,
+                        credits: false,
+                        storeAsFile: true,
+                        maxFileSize: '2MB',
+                        acceptedFileTypes: ['image/*'],
+                        files: imageUrl ? [{ source: imageUrl, options: { type: 'remote' } }] : []
+                    });
+                } catch (e) {}
+            }
+
+            function renumber(){
+                [...container.querySelectorAll('.section-item')].forEach((secEl, sIdx) => {
+                    secEl.querySelector('.section-number').textContent = sIdx + 1;
+                    secEl.setAttribute('data-index', sIdx);
+                    // rename inputs
+                    secEl.querySelectorAll('[name^="custom_sections["]').forEach(inp => {
+                        inp.name = inp.name.replace(/custom_sections\[[0-9]+\]/, `custom_sections[${sIdx}]`);
+                    });
+                    const fieldsContainer = secEl.querySelector('.fields-container');
+                    [...fieldsContainer.querySelectorAll('.field-item')].forEach((fEl, fIdx) => {
+                        fEl.querySelector('.field-number').textContent = fIdx + 1;
+                        fEl.setAttribute('data-index', fIdx);
+                        fEl.querySelectorAll('[name*="[fields]"]').forEach(inp => {
+                            inp.name = inp.name.replace(/custom_sections\[[0-9]+\]\[fields\]\[[0-9]+\]/, `custom_sections[${sIdx}][fields][${fIdx}]`);
+                        });
+                    });
+                });
+            }
+
+            function createFieldElement(sectionIndex){
+                const wrapper = document.createElement('div');
+                wrapper.className = 'border rounded p-2 field-item';
+                wrapper.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>{{ __('labels.field') }} #<span class="field-number"></span></span>
+                        <button type="button" class="btn btn-link text-danger p-0 remove-field">{{ __('labels.remove') }}</button>
+                    </div>
+                    <div class="row g-2 align-items-end">
+                        <div class="col-md-3">
+                            <label class="form-label">{{ __('labels.title') }}</label>
+                            <input type="text" class="form-control" name="custom_sections[${sectionIndex}][fields][0][title]">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ __('labels.description') }}</label>
+                            <input type="text" class="form-control" name="custom_sections[${sectionIndex}][fields][0][description]">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">{{ __('labels.sort_order') }}</label>
+                            <input type="number" min="0" class="form-control" name="custom_sections[${sectionIndex}][fields][0][sort_order]" value="0">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">{{ __('labels.image') }}</label>
+                            <input type="file" class="form-control field-image-input" name="custom_sections[${sectionIndex}][fields][0][image]">
+                        </div>
+                    </div>`;
+                return wrapper;
+            }
+
+            function createSectionElement(){
+                const sIdx = container.querySelectorAll('.section-item').length;
+                const card = document.createElement('div');
+                card.className = 'card border section-item';
+                card.innerHTML = `
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h4 class="mb-0">{{ __('labels.section') }} #<span class="section-number"></span></h4>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-outline-danger remove-section">{{ __('labels.remove') }}</button>
+                            </div>
+                        </div>
+                                                <hr>
+                        <div class="row g-2">
+                            <div class="col-md-4">
+                                <label class="form-label required">{{ __('labels.title') }}</label>
+                                <input type="text" class="form-control" name="custom_sections[${sIdx}][title]">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ __('labels.description') }}</label>
+                                <input type="text" class="form-control" name="custom_sections[${sIdx}][description]">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">{{ __('labels.sort_order') }}</label>
+                                <input type="number" min="0" class="form-control" name="custom_sections[${sIdx}][sort_order]" value="0">
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <strong class="mb-0">{{ __('labels.fields') }}</strong>
+                                <button type="button" class="btn btn-outline-secondary add-field">{{ __('labels.add_field') }}</button>
+                            </div>
+                            <div class="vstack gap-2 fields-container"></div>
+                        </div>
+                    </div>`;
+                return card;
+            }
+
+            container?.querySelectorAll('.field-image-input').forEach(initFilePondFor);
+
+            addSectionBtn?.addEventListener('click', function(){
+                const card = createSectionElement();
+                container.appendChild(card);
+                renumber();
+            });
+
+            container?.addEventListener('click', function(e){
+                const t = e.target;
+                if (t.closest('.remove-section')){
+                    const item = t.closest('.section-item');
+                    item?.remove();
+                    renumber();
+                }
+                if (t.closest('.add-field')){
+                    const section = t.closest('.section-item');
+                    const sIdx = parseInt(section.getAttribute('data-index') || '0', 10);
+                    const fieldsWrap = section.querySelector('.fields-container');
+                    const fieldEl = createFieldElement(sIdx);
+                    fieldsWrap.appendChild(fieldEl);
+                    renumber();
+                    initFilePondFor(fieldEl.querySelector('.field-image-input'));
+                }
+                if (t.closest('.remove-field')){
+                    const fieldItem = t.closest('.field-item');
+                    fieldItem?.remove();
+                    renumber();
+                }
+            });
+        });
+    </script>
 @endpush

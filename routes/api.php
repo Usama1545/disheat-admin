@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\FaqApiController;
 use App\Http\Controllers\Api\FeaturedSectionApiController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\Product\ProductApiController;
+use App\Http\Controllers\Api\Product\ProductSidebarApiController;
 use App\Http\Controllers\Api\Product\ProductFaqApiController;
 use App\Http\Controllers\Api\SellerFeedbackApiController;
 use App\Http\Controllers\Api\SettingApiController;
@@ -21,6 +22,7 @@ use App\Http\Controllers\Api\User\PromoApiController;
 use App\Http\Controllers\Api\User\UserApiController;
 use App\Http\Controllers\Api\User\WalletApiController;
 use App\Http\Controllers\Api\User\WishlistApiController;
+use App\Http\Controllers\Api\User\UserNotificationApiController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\Payments\FlutterwaveController;
 use App\Http\Controllers\Payments\PaystackController;
@@ -57,6 +59,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('user')->name('user.')->group(function () {
         // delete user account
         Route::delete('/delete-account', [UserApiController::class, 'deleteAccount'])->name('delete-account');
+        // change password
+        Route::post('/change-password', [UserApiController::class, 'changePassword'])->name('change-password');
 
         // User profile
         Route::apiResource('/addresses', AddressApiController::class);
@@ -64,6 +68,15 @@ Route::middleware('auth:sanctum')->group(function () {
         // profile
         Route::get('/profile', [UserApiController::class, 'getProfile']);
         Route::post('/profile', [UserApiController::class, 'updateProfile']);
+
+        // Notifications (app user)
+        Route::prefix('notifications')->group(function () {
+            Route::get('/', [UserNotificationApiController::class, 'index']);
+            Route::get('/unread-count', [UserNotificationApiController::class, 'unreadCount']);
+            Route::post('/mark-all-read', [UserNotificationApiController::class, 'markAllAsRead']);
+            Route::post('/{id}/read', [UserNotificationApiController::class, 'markAsRead']);
+            Route::post('/{id}/unread', [UserNotificationApiController::class, 'markAsUnread']);
+        });
 
         // Wallet routes
         Route::prefix('wallet')->name('wallet.')->group(function () {
@@ -152,13 +165,17 @@ Route::get('banners', [BannerApiController::class, 'index']);
 // get categories
 Route::get('categories', [CategoryApiController::class, 'index']);
 Route::get('categories/sub-categories', [CategoryApiController::class, 'subCategories']);
+Route::get('categories/sidebar', [CategoryApiController::class, 'getCategories']);
 
 // get brands
 Route::get('brands', [BrandApiController::class, 'index']);
+Route::get('brands/sidebar', [BrandApiController::class, 'sidebarBrands']);
 
 // products
 Route::prefix('products')->name('products.')->group(function () {
 //    Route::get('/', [ProductApiController::class, 'getAllProduct']);
+    Route::get('/sidebar-filters', [ProductSidebarApiController::class, 'filters'])->name('products.sidebar-filters');
+    Route::get('/get-types', [ProductSidebarApiController::class, 'getTypes'])->name('products.get-types');
     Route::get('/search-by-keywords', [ProductApiController::class, 'searchByKeywords']);
     Route::get('/store-wise', [ProductApiController::class, 'storeWise']);
     Route::get('/{slug}', [ProductApiController::class, 'show']);
@@ -181,6 +198,7 @@ Route::prefix('delivery-zone')->name('delivery_zone.')->group(function () {
     Route::get('/products', [ProductApiController::class, 'index']);
     Route::get('/{id}', [DeliveryZoneApiController::class, 'show']);
 });
+Route::post('stores/map', [DeliveryZoneApiController::class, 'storesByMap']);
 
 // get faqs
 Route::prefix('faqs')->name('faqs.')->group(function () {

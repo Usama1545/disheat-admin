@@ -78,7 +78,13 @@ class CategoryController extends Controller
     public function sort(): View
     {
         $this->authorize('viewAny', Category::class);
-        $parentCategories = Category::query()->whereNull('parent_id')->ordered()->get();
+        // Only show home categories for sorting
+        $parentCategories = Category::query()
+            ->whereNull('parent_id')
+            ->where('is_home_category', true)
+            ->ordered()
+            ->get();
+
         return view($this->panelView('categories.sort'), compact('parentCategories'));
     }
 
@@ -110,6 +116,80 @@ class CategoryController extends Controller
                 success: true,
                 message: __('labels.sort_order_updated_successfully'),
                 data: []
+            );
+        } catch (ValidationException $e) {
+            DB::rollBack();
+            return ApiResponseType::sendJsonResponse(
+                success: false,
+                message: __('labels.validation_failed'),
+                data: $e->errors()
+            );
+        } catch (AuthorizationException $e) {
+            return ApiResponseType::sendJsonResponse(
+                success: false,
+                message: __('labels.permission_denied'),
+                data: []
+            );
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return ApiResponseType::sendJsonResponse(
+                success: false,
+                message: __('labels.something_went_wrong'),
+                data: []
+            );
+        }
+    }
+
+    /**
+     * Update the list of parent categories marked as home categories.
+     */
+    public function updateHomeCategories(Request $request): JsonResponse
+    {
+        try {
+            if (!$this->editPermission) {
+                throw new AuthorizationException(__('labels.permission_denied'));
+            }
+
+            $validated = $request->validate([
+                'home_category_ids' => 'array',
+                'home_category_ids.*' => [
+                    'integer',
+                    'exists:categories,id',
+                    function ($attribute, $value, $fail) {
+                        $category = Category::find($value);
+                        if ($category && !is_null($category->parent_id)) {
+                            $fail(__('validation.home_category_must_be_root'));
+                        }
+                    }
+                ],
+            ]);
+
+            $selectedIds = collect($validated['home_category_ids'] ?? [])->unique()->values();
+
+            DB::beginTransaction();
+
+            // Work only with parent categories - already validated above
+            $parentIds = Category::query()->whereNull('parent_id')->pluck('id');
+
+            // Set is_home_category=true for selected parent IDs, false for others
+            Category::query()
+                ->whereIn('id', $parentIds)
+                ->update(['is_home_category' => false]);
+
+            if ($selectedIds->isNotEmpty()) {
+                Category::query()
+                    ->whereIn('id', $parentIds->intersect($selectedIds))
+                    ->update(['is_home_category' => true]);
+            }
+
+            DB::commit();
+
+            return ApiResponseType::sendJsonResponse(
+                success: true,
+                message: __('labels.updated_successfully'),
+                data: [
+                    'updated_ids' => $selectedIds,
+                ]
             );
         } catch (ValidationException $e) {
             DB::rollBack();
@@ -480,6 +560,7 @@ class CategoryController extends Controller
                 ->where('status', CategoryStatusEnum::ACTIVE())
                 ->get();
         } else if (!empty($type) && $type == 'root') {
+            $query = $request->input('q');
             $categories = Category::where('title', 'LIKE', '%' . $query . '%')
                 ->select('id', 'title')
                 ->where('parent_id', null)

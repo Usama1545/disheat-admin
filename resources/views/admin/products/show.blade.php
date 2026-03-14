@@ -96,7 +96,7 @@
                                             @php $vs = $product->verification_status; @endphp
                                             <span
                                                 class="badge {{ $vs === 'approved' ? 'bg-green-lt' : ($vs === 'rejected' ? 'bg-red-lt' : 'bg-yellow-lt') }}">
-                                                {{ $vs }}
+                                                {{ Str::replace("_", " ",$vs) }}
                                             </span>
                                         </div>
                                     </div>
@@ -120,6 +120,72 @@
                             </div>
                         </div>
                     </div>
+                    <!-- Custom Product Sections -->
+                    @if($product->customProductSections && $product->customProductSections->count())
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">{{ __('labels.custom_product_sections') }}</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row g-3">
+                                        @foreach($product->customProductSections as $section)
+                                            <div class="col-12">
+                                                <div class="card card-borderless">
+                                                    <div class="card-body">
+                                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                                            <h4 class="mb-0">{{ $section->title }}</h4>
+                                                            <span class="badge bg-blue-lt">#{{ $section->sort_order }}</span>
+                                                        </div>
+                                                        @if(!empty($section->description))
+                                                            <p class="text-muted">{{ $section->description }}</p>
+                                                        @endif
+                                                        @if($section->fields && $section->fields->count())
+                                                            <div class="row row-cards">
+                                                                @foreach($section->fields as $field)
+                                                                    <div class="col-md-4 col-sm-6">
+                                                                        <div class="card">
+                                                                            <div class="row g-0">
+                                                                                @if($field->image)
+                                                                                    <div class="col-md-4 p-2">
+                                                                                        <img src="{{ $field->image }}"
+                                                                                             alt="{{ $field->title }}"
+                                                                                             class="img-fluid rounded-start object-contain" style="max-width: 100px;">
+                                                                                    </div>
+                                                                                @endif
+                                                                                <div
+                                                                                    class="col-md-{{ $field->image ? '8' : '12' }}">
+                                                                                    <div class="card-body">
+                                                                                        <div
+                                                                                            class="d-flex justify-content-between align-items-center">
+                                                                                            <h5 class="card-title mb-0">{{ $field->title }}</h5>
+                                                                                            @if(isset($field->pivot))
+                                                                                                <span
+                                                                                                    class="badge bg-azure-lt">#{{ $field->pivot->sort_order }}</span>
+                                                                                            @endif
+                                                                                        </div>
+                                                                                        @if(!empty($field->description))
+                                                                                            <p class="card-text text-muted small mt-2">{{ $field->description }}</p>
+                                                                                        @endif
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                @endforeach
+                                                            </div>
+                                                        @else
+                                                            <div class="text-muted">{{ __('labels.no_fields_found') }}</div>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
 
                     <!-- Product Specifications Card -->
                     <div class="col-12 col-lg-6">

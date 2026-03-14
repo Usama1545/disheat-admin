@@ -24,7 +24,7 @@ use Illuminate\Support\Collection;
 class CategoryApiController extends Controller
 {
     /**
-     * Get categories with optional slug filter.
+     * Get categories base api.
      * If slug is not provided, returns root categories.
      */
     #[QueryParameter('page', description: 'Page number for pagination.', type: 'int', default: 1, example: 1)]
@@ -32,13 +32,37 @@ class CategoryApiController extends Controller
     #[QueryParameter('latitude', description: 'Latitude of the user location for zone-wise product counts', type: 'float', example: 23.11684540)]
     #[QueryParameter('longitude', description: 'Longitude of the user location for zone-wise product counts', type: 'float', example: 70.02805670)]
     #[QueryParameter('slug', description: 'Category slug to filter by', type: 'string', example: 'apple')]
+    #[QueryParameter('search', description: 'Search term to filter categories', type: 'string', example: 'electronics')]
+    #[QueryParameter('home', description: 'When true, returns only root categories marked as home categories, ordered by sort_order', type: 'boolean', example: true)]
+    #[QueryParameter('include_no_product', description: 'When true, also return categories without product', type: 'boolean', example: 'false')]
     public function index(Request $request): JsonResponse
     {
+        // Validate inputs
+        $request->validate([
+            'page' => 'sometimes|integer|min:1',
+            'per_page' => 'sometimes|integer|min:1|max:100',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
+            'slug' => 'sometimes|string',
+            'search' => 'sometimes|string',
+            'home' => 'nullable',
+        ]);
+
         $perPage = (int)$request->input('per_page', 15);
+        $includeNoProduct = $request->input('include_no_product', false);
 
         // Base query: either children of slug or root categories
         $query = Category::query()->with('parent')->where('status', CategoryStatusEnum::ACTIVE());
-        if ($request->has('slug')) {
+        if ($request->has('search')) {
+            $query->where('title', 'like', '%' . $request->input('search') . '%');
+        }
+        $homeOnly = filter_var($request->input('home', false), FILTER_VALIDATE_BOOLEAN);
+
+        if ($homeOnly) {
+            // Force root categories and home-category filter when `home` is truthy
+            $query->whereNull('parent_id')
+                ->where('is_home_category', true);
+        } elseif ($request->has('slug')) {
             $parentCategory = Category::where('slug', $request->input('slug'))
                 ->where('status', CategoryStatusEnum::ACTIVE())
                 ->first();
@@ -58,21 +82,32 @@ class CategoryApiController extends Controller
         $this->applyProductsCount($query, $storeIds);
 
         // Fetch and post-process
-        $allCategories = $query->orderBy('title')->get();
+        if ($homeOnly) {
+            // Home categories should be ordered by configured sort_order
+            $allCategories = $query->ordered()->get();
+        } else {
+            $allCategories = $query->orderBy('title')->get();
+        }
         // When listing root categories, aggregate children's product counts only for root items.
         // When a slug is provided (listing children of a specific category), aggregate for all
         // returned categories so their immediate children's products are included as well.
         $predicate = $request->has('slug')
-            ? function (Category $cat) { return true; }
-            : function (Category $cat) { return is_null($cat->parent_id); };
+            ? function (Category $cat) {
+                return true;
+            }
+            : function (Category $cat) {
+                return is_null($cat->parent_id);
+            };
 
         $processed = $this->aggregateImmediateChildrenProducts($allCategories, $predicate, $useZoneFilter, $storeIds);
 
-        $filtered = $this->filterNonZeroProducts($processed);
+        if (!$includeNoProduct) {
+            $processed = $this->filterNonZeroProducts($processed);
+        }
 
         // Paginate and respond
-        $paginator = $this->paginateCollection($filtered, (int)$request->input('page', 1), $perPage, $request);
-        $response = $this->responseFromPaginator($paginator);
+        $paginator = $this->paginateCollection($processed, (int)$request->input('page', 1), $perPage, $request);
+        $response = ApiResponseType::responseFromPaginator($paginator);
         return ApiResponseType::sendJsonResponse(true, 'labels.category_fetched_successfully', $response);
     }
 
@@ -86,6 +121,15 @@ class CategoryApiController extends Controller
     #[QueryParameter('longitude', description: 'Longitude of the user location for zone-wise product counts', type: 'float', example: 70.02805670)]
     public function subCategories(Request $request): JsonResponse
     {
+        // Validate inputs
+        $request->validate([
+            'page' => 'sometimes|integer|min:1',
+            'per_page' => 'sometimes|integer|min:1|max:100',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
+            'filter' => 'nullable|string',
+        ]);
+
         $perPage = (int)$request->input('per_page', 15);
 //        $filter = is_null($request->input('filter')) ? CategorySubCategoryFilterEnum::RANDOM() : $request->input('filter');
         $filter = $request->input('filter');
@@ -127,12 +171,87 @@ class CategoryApiController extends Controller
         $filtered = $this->filterNonZeroProducts($processed);
 
         $paginator = $this->paginateCollection($filtered, (int)$request->input('page', 1), $perPage, $request);
-        $response = array_merge($this->responseFromPaginator($paginator), ['filter' => $filter]);
+        $response = array_merge(ApiResponseType::responseFromPaginator($paginator), ['filter' => $filter]);
+        return ApiResponseType::sendJsonResponse(true, 'labels.category_fetched_successfully', $response);
+    }
+
+    /**
+     * Get categories for sidebar filter.
+     */
+    #[QueryParameter('ids', description: 'Comma separated list of category IDs or array of IDs', type: 'string', example: '1,2,3')]
+    #[QueryParameter('page', description: 'Page number for pagination.', type: 'int', default: 1, example: 1)]
+    #[QueryParameter('per_page', description: 'Number of categories per page', type: 'int', default: 15, example: 15)]
+    #[QueryParameter('latitude', description: 'Latitude of the user location for zone-wise product counts', type: 'float', example: 23.11684540)]
+    #[QueryParameter('longitude', description: 'Longitude of the user location for zone-wise product counts', type: 'float', example: 70.02805670)]
+    public function getCategories(Request $request): JsonResponse
+    {
+        // Normalize ids: accept CSV string or array
+        $idsInput = $request->input('ids');
+        if (is_string($idsInput)) {
+            $ids = array_filter(array_map('trim', explode(',', $idsInput)), fn($v) => $v !== '');
+            $request->merge(['ids' => $ids]);
+        }
+
+        // Validate inputs
+        $validated = $request->validate([
+            'ids' => 'sometimes|array',
+            'ids.*' => 'integer|min:1',
+            'page' => 'sometimes|integer|min:1',
+            'per_page' => 'sometimes|integer|min:1|max:100',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
+        ]);
+
+        // Prepare IDs (optional)
+        $ids = array_values(array_unique(array_map('intval', $validated['ids'] ?? [])));
+
+        $perPage = (int)$request->input('per_page', 15);
+
+        $query = Category::query()
+            ->with('parent')
+            ->where('status', CategoryStatusEnum::ACTIVE());
+        // If IDs were provided, limit to those
+        if (!empty($ids)) {
+            $query->whereIn('id', $ids);
+        }
+
+        // Zone context and counts
+        [$useZoneFilter, $storeIds] = $this->zoneContext(
+            $request->input('latitude'),
+            $request->input('longitude')
+        );
+        $this->applyProductsCount($query, $storeIds);
+
+        // Fetch all. If IDs provided, keep their order; otherwise order by title
+        if (!empty($ids)) {
+            $allCategories = $query->get()->sortBy(function (Category $cat) use ($ids) {
+                return array_search($cat->id, $ids);
+            })->values();
+        } else {
+            $allCategories = $query->orderBy('title')->get();
+        }
+
+        // Aggregate children's product counts for root categories to include immediate subcategory products
+        $processed = $this->aggregateImmediateChildrenProducts(
+            $allCategories,
+            function (Category $cat) {
+                return is_null($cat->parent_id);
+            },
+            $useZoneFilter,
+            $storeIds
+        );
+
+        $filtered = $this->filterNonZeroProducts($processed);
+
+        // Paginate and respond
+        $paginator = $this->paginateCollection($filtered, (int)$request->input('page', 1), $perPage, $request);
+        $response = ApiResponseType::responseFromPaginator($paginator);
         return ApiResponseType::sendJsonResponse(true, 'labels.category_fetched_successfully', $response);
     }
 
     /**
      * Build an empty paginated-like response.
+     *
      */
     private function emptyResponse(int $perPage, array $extra = []): array
     {
@@ -251,19 +370,5 @@ class CategoryApiController extends Controller
         );
         $paginator->appends($request->query());
         return $paginator;
-    }
-
-    /**
-     * Convert paginator to API response array.
-     */
-    private function responseFromPaginator(LengthAwarePaginator $paginator): array
-    {
-        return [
-            'current_page' => $paginator->currentPage(),
-            'last_page' => $paginator->lastPage(),
-            'per_page' => $paginator->perPage(),
-            'total' => $paginator->total(),
-            'data' => $paginator->items(),
-        ];
     }
 }

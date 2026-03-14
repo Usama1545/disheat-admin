@@ -18,10 +18,28 @@ return [
         ],
         'categories' => [
             'icon' => 'ti-category-2',
-            'route' => 'admin.categories.index',
             'title' => 'labels.categories',
             'active' => 'categories',
-            'permission' => 'category.view',
+            'route' => [
+                'categories' => [
+                    'sub_active' => 'categories',
+                    'sub_route' => 'admin.categories.index',
+                    'sub_title' => 'labels.categories',
+                    'permission' => 'category.view',
+                ],
+                'sort' => [
+                    'sub_active' => 'sort',
+                    'sub_route' => 'admin.categories.sort',
+                    'sub_title' => 'labels.sort',
+                    'permission' => 'category.create',
+                ],
+                'bulk_upload' => [
+                    'sub_active' => 'bulk_upload',
+                    'sub_route' => 'admin.categories.bulk-upload',
+                    'sub_title' => 'labels.bulk_upload',
+                    'permission' => 'category.create',
+                ],
+            ],
         ],
         'brands' => [
             'icon' => 'ti-sparkles',
@@ -32,10 +50,28 @@ return [
         ],
         'customers' => [
             'icon' => 'ti-users',
-            'route' => 'admin.customers.index',
             'title' => 'labels.customers',
             'active' => 'customers',
-            'permission' => 'customer.view',
+            'route' => [
+                'customers' => [
+                    'sub_active' => 'customers',
+                    'sub_route' => 'admin.customers.index',
+                    'sub_title' => 'labels.customers',
+                    'permission' => 'customer.view',
+                ],
+                'transactions' => [
+                    'sub_active' => 'transactions',
+                    'sub_route' => 'admin.wallet.transactions',
+                    'sub_title' => 'labels.wallet_transactions',
+                    'permission' => 'orders.view',
+                ],
+                'deposits' => [
+                    'sub_active' => 'deposits',
+                    'sub_route' => 'admin.wallet.deposits',
+                    'sub_title' => 'labels.pending_wallet_deposits',
+                    'permission' => 'orders.view',
+                ],
+            ],
         ],
         'seller_management' => [
             'icon' => 'ti-users-group',
@@ -311,15 +347,22 @@ return [
                     'sub_title' => 'labels.delivery_boy',
                     'permission' => 'setting.delivery_boy.view',
                 ],
+                'seller' => [
+                    'sub_active' => 'seller',
+                    'sub_route' => 'admin.settings.show',
+                    'route_param' => ['setting' => 'seller'],
+                    'sub_title' => 'labels.seller',
+                    'permission' => 'setting.seller.view',
+                ],
             ],
         ],
-        // 'system_updates' => [
-        //     'icon' => 'ti-package',
-        //     'route' => 'admin.system-updates.index',
-        //     'title' => 'labels.system_updates',
-        //     'active' => 'system_updates',
-        //     'permission' => 'setting.system.view',
-        // ],
+        'system_updates' => [
+            'icon' => 'ti-package',
+            'route' => 'admin.system-updates.index',
+            'title' => 'labels.system_updates',
+            'active' => 'system_updates',
+            'permission' => 'setting.system.view',
+        ],
         'logout' => [
             'icon' => 'ti-logout-2',
             'route' => 'admin.logout',
@@ -432,6 +475,13 @@ return [
                     'sub_active' => 'add_products',
                     'sub_route' => 'seller.products.create',
                     'sub_title' => 'labels.add_products',
+                    'permission' => 'product.create'
+
+                ],
+                'bulk_upload' => [
+                    'sub_active' => 'bulk_upload',
+                    'sub_route' => 'seller.products.bulk-upload',
+                    'sub_title' => 'labels.bulk_upload',
                     'permission' => 'product.create'
 
                 ],

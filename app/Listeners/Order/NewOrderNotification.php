@@ -2,12 +2,12 @@
 
 namespace App\Listeners\Order;
 
+use App\Broadcasting\FirebaseChannel;
 use App\Enums\NotificationTypeEnum;
 use App\Events\Order\OrderPlaced;
-use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Support\Facades\Log;
 
 class NewOrderNotification
-//    implements ShouldQueue
 {
 
     /**
@@ -27,8 +27,35 @@ class NewOrderNotification
 
     public function sendNotification($user, $event, $sendTo): void
     {
+        // Build firebase payload regardless of mail status
         $event->firebaseNotification = $this->firebaseNotification(event: $event, sendTo: $sendTo);
-        $user->notify(new \App\Notifications\NewOrderNotification($event));
+
+        // If user instance is missing, skip safely
+        if (!$user) {
+            Log::warning('NewOrderNotification skipped: notifiable user missing', [
+                'send_to' => $sendTo,
+                'order_id' => $event->order->id ?? null,
+            ]);
+            return;
+        }
+
+        // Send each channel independently so one failure doesn't block others
+        $channels = ['database', FirebaseChannel::class, 'mail'];
+        foreach ($channels as $channel) {
+            try {
+                // notifyNow allows forcing a specific subset of channels
+                $user->notifyNow(new \App\Notifications\NewOrderNotification($event), [$channel]);
+            } catch (\Throwable $e) {
+                Log::error('NewOrderNotification channel failed; continuing with others', [
+                    'channel' => is_string($channel) ? $channel : (is_object($channel) ? get_class($channel) : 'unknown'),
+                    'message' => $e->getMessage(),
+                    'send_to' => $sendTo,
+                    'user_id' => $user->id ?? null,
+                    'order_id' => $event->order->id ?? null,
+                ]);
+                // continue to next channel
+            }
+        }
     }
 
     public function firebaseNotification($event, $sendTo): array

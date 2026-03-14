@@ -7,6 +7,7 @@ use App\Enums\DefaultSystemRolesEnum;
 use App\Enums\SettingTypeEnum;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\CurrencyService;
 use App\Services\SettingService;
 use App\Traits\ChecksPermissions;
 use App\Types\Api\ApiResponseType;
@@ -22,10 +23,12 @@ class CustomerController extends Controller
     use AuthorizesRequests, ChecksPermissions;
 
     protected SettingService $settingService;
+    protected CurrencyService $currencyService;
 
-    public function __construct(SettingService $settingService)
+    public function __construct(SettingService $settingService, CurrencyService $currencyService)
     {
         $this->settingService = $settingService;
+        $this->currencyService = $currencyService;
     }
 
     protected function isDemoModeEnabled(): bool
@@ -48,8 +51,8 @@ class CustomerController extends Controller
         $columns = [
             ['data' => 'id', 'name' => 'id', 'title' => __('labels.id')],
             ['data' => 'name', 'name' => 'name', 'title' => __('labels.name')],
-            ['data' => 'email', 'name' => 'email', 'title' => __('labels.email')],
-            ['data' => 'mobile', 'name' => 'mobile', 'title' => __('labels.mobile')],
+            ['data' => 'details', 'name' => 'details', 'title' => __('labels.details')],
+            ['data' => 'wallet_balance', 'name' => 'wallet_balance', 'title' => __('labels.wallet_balance')],
             ['data' => 'created_at', 'name' => 'created_at', 'title' => __('labels.created_at')],
         ];
 
@@ -74,7 +77,7 @@ class CustomerController extends Controller
         $orderColumn = $columns[$orderColumnIndex] ?? 'id';
 
         // Customers: users that have role 'customer' and do not have admin/seller access panel
-        $query = User::query()
+        $query = User::query()->with('wallet')
             ->where(function ($q) {
                 $q->whereNull('access_panel')
                     ->orWhere('access_panel', 'web');
@@ -103,8 +106,10 @@ class CustomerController extends Controller
                 return [
                     'id' => $user->id,
                     'name' => $user->name,
-                    'email' => $demo ? Str::mask($email, '****', 3, 4) : $email,
-                    'mobile' => $demo ? Str::mask($mobile, '****', 3, 4) : $mobile,
+                    'details' => $demo
+                        ? Str::mask($email, '****', 3, 4) . ' / ' . Str::mask($mobile, '****', 3, 4)
+                        : $email . ' / ' . $mobile,
+                    'wallet_balance' => $this->currencyService->format($user?->wallet->balance ?? 0),
                     'created_at' => $user->created_at?->format('Y-m-d'),
                 ];
             })

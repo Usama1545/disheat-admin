@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Setting;
 
+use App\Enums\NotificationTypeEnum;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -59,6 +60,7 @@ class SystemSettingResource extends JsonResource
                 'referEarnNumberOfTimesBonus' => $this->value['referEarnNumberOfTimesBonus'] ?? '',
                 'currency' => $this->value['currency'] ?? 'USD',
                 'currencySymbol' => $this->value['currencySymbol'] ?? '$',
+                'notification_type' => NotificationTypeEnum::values() ?? []
             ]
         ];
     }

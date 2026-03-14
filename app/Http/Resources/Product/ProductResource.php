@@ -34,6 +34,7 @@ class ProductResource extends JsonResource
             'indicator' => $this->indicator,
             'favorite' => $this->favorite,
             'estimated_delivery_time' => $this->estimated_delivery_time,
+            'base_prep_time' => $this->base_prep_time ?? 0,
             'ratings' => (float)$reviews['average_rating'] ?? 0,
             'rating_count' => (float)$reviews['total_reviews'] ?? 0,
             'main_image' => $this->main_image,
@@ -46,6 +47,8 @@ class ProductResource extends JsonResource
             'returnable_days' => $this->returnable_days,
             'is_cancelable' => (float)$this->is_cancelable,
             'cancelable_till' => $this->cancelable_till,
+            'is_attachment_required' => (float)$this->is_attachment_required,
+            'requires_otp' => (float)$this->requires_otp,
             'tags' => $this->tags,
             // Dynamic custom fields stored as JSON in DB
             'custom_fields' => $this->custom_fields ?? [],
@@ -66,6 +69,10 @@ class ProductResource extends JsonResource
                 )->checkStoreStatus() ?? [],
             'variants' => ProductVariantResource::collection($this->whenLoaded('variants')),
             'attributes' => $this->getFormattedVariantAttributes(),
+            // Custom Product Sections with nested fields (including image and pivot sort order)
+            'custom_product_sections' => ProductCustomSectionResource::collection(
+                $this->whenLoaded('customProductSections')
+            ) ?? [],
         ];
     }
 }

@@ -176,7 +176,8 @@ class ReturnRequestController extends Controller
 
         $orderDetails = "<div>
                 <p class='m-0 fw-medium'>{$productTitle} " . ($variantTitle ? "<small>{$variantTitle}</small>" : "") . "</p>
-                <small class='text-muted'>{$r->order?->order_id}</small>
+                <small class='text-muted'>" . __('labels.order_id') . " - {$r->order_id}</small> |
+                <small class='text-muted'>" . __('labels.order_item_id') . " - {$r->order_item_id}</small>
                 <div class='mt-2 d-flex align-items-center gap-1'>{$images}</div>
             </div>";
 

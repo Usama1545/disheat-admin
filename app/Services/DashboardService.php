@@ -895,16 +895,18 @@ class DashboardService
             ->get();
 
         return $topDeliveryBoys->map(function ($deliveryBoy) {
-            return [
-                'id' => $deliveryBoy->id,
-                'name' => $deliveryBoy->user->name,
-                'email' => $deliveryBoy->user->email,
-                'phone' => $deliveryBoy->user->phone,
-                'total_deliveries' => $deliveryBoy->total_deliveries,
-                'total_revenue' => $this->currencyService->format($deliveryBoy->total_revenue),
-                'total_revenue_raw' => $deliveryBoy->total_revenue,
-                'avatar' => $deliveryBoy->getFirstMediaUrl(SpatieMediaCollectionName::PROFILE_IMAGE()) ?: null,
-            ];
+            if ($deliveryBoy->user) {
+                return [
+                    'id' => $deliveryBoy->id,
+                    'name' => $deliveryBoy->user->name,
+                    'email' => $deliveryBoy->user->email,
+                    'phone' => $deliveryBoy->user->phone,
+                    'total_deliveries' => $deliveryBoy->total_deliveries,
+                    'total_revenue' => $this->currencyService->format($deliveryBoy->total_revenue),
+                    'total_revenue_raw' => $deliveryBoy->total_revenue,
+                    'avatar' => $deliveryBoy->getFirstMediaUrl(SpatieMediaCollectionName::PROFILE_IMAGE()) ?: null,
+                ];
+            }
         })->toArray();
     }
 

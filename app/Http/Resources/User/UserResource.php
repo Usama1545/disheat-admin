@@ -14,6 +14,8 @@ class UserResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $balance = $this->wallet?->balance ?? 0.00;
+        $blockedBalance = $this->wallet?->blocked_balance ?? 0.00;
         return [
             'id' => $this->id,
             'name' => $this->name,
@@ -21,7 +23,9 @@ class UserResource extends JsonResource
             'mobile' => $this->mobile,
             'country' => $this->country,
             'iso_2' => $this->iso_2,
-            'wallet_balance' => $this->wallet?->balance ?? 0.00,
+            'wallet_balance' => $balance,
+            'blocked_balance' => $blockedBalance,
+            'available_balance' => number_format($balance - $blockedBalance, 2),
             'referral_code' => $this->referral_code,
             'friends_code' => $this->friends_code,
             'reward_points' => $this->reward_points,

@@ -28,6 +28,7 @@ class GetProductsByLocationRequest extends FormRequest
             'page' => 'integer|min:1',
             'categories' => 'string|nullable',
             'brands' => 'string|nullable',
+            'attribute_values' => 'string|nullable',
             'sort' => 'string|nullable',
             'store' => 'string|nullable',
             'exclude_product' => 'string|nullable',

@@ -152,7 +152,7 @@ class SellerEarningController extends Controller
                         <p class='m-0 fw-medium text-primary'>" . __('labels.order_id') . ": {$st->order_id} | " . __('labels.order_item_id') . ": {$st->order_item_id}</p>
                         <p class='m-0'>" . __('labels.title') . ": " . e($st->orderItem->title) . "</p>
                         <p class='m-0'>" . __('labels.variant') . ": " . e($st->orderItem->variant_title) . "</p>
-                        <p class='m-0'>" . __('labels.store') . ": " . e($store->name) . "</p>
+                        <p class='m-0'>" . __('labels.store') . ": " . e($store->name ?? "") . "</p>
                         <p class='m-0'>" . __('labels.amount') . ": " . $this->currencyService->format($st->orderItem->subtotal) . "</p>
                         <p class='m-0'>" . __('labels.order_date') . ": " . optional($st->posted_at ?? $orderItem?->created_at)->format('Y-m-d') . "</p>
                         <p class='m-0'>" . __('labels.order_current_status') . ": " . Str::ucfirst(Str::replace("_", " ", $st->orderItem->status)) . "</p>

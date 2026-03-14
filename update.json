@@ -1,8 +1,8 @@
 {
-    "version": "1.0.2",
-    "min_app_version": "1.0.0",
-    "notes": "This update introduces Category & Brand bulk upload for faster data management, adds mobile login with OTP for improved security, and enables the Forgot Password feature in the Rider app for easier account recovery.",
+    "version": "1.1.1",
+    "min_app_version": "1.1.0",
     "run_migrations": true,
+    "notes": "Version 1.1.1 introduces advanced notifications, smart product filtering, OTP login, purchase validation, map-based store browsing, delivery zone display, and major feature enhancements across Admin, Seller, Rider, Customer App, and Web platforms.",
     "run_seeders": false,
     "vendor_update": false,
     "actions": [
@@ -13,8 +13,13 @@
         },
         {
             "type": "add",
-            "source": "config/menu.php",
-            "target": "config/menu.php"
+            "source": "config",
+            "target": "config"
+        },
+        {
+            "type": "add",
+            "source": "bootstrap/app.php",
+            "target": "bootstrap/app.php"
         },
         {
             "type": "add",
@@ -43,11 +48,6 @@
         },
         {
             "type": "add",
-            "source": "public/assets/images",
-            "target": "public/assets/images"
-        },
-        {
-            "type": "add",
             "source": "public/assets/css",
             "target": "public/assets/css"
         },
@@ -60,11 +60,6 @@
             "type": "add",
             "source": "public/assets/seller",
             "target": "public/assets/seller"
-        },
-        {
-            "type": "add",
-            "source": "public/firebase-messaging-sw.js",
-            "target": "public/firebase-messaging-sw.js"
         }
     ],
     "commands": [

@@ -1,4 +1,4 @@
-@extends('layouts.admin.app', ['page' => $menuAdmin['customers']['active'] ?? ""])
+@extends('layouts.admin.app', ['page' => $menuAdmin['customers']['active'] ?? "", 'sub_page' => $menuAdmin['customers']['route']['customers']['sub_active'] ?? null])
 
 @section('title', __('labels.customers'))
 

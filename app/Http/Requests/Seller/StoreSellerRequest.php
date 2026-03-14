@@ -33,7 +33,7 @@ class StoreSellerRequest extends FormRequest
             'mobile' => 'required_without:user_id|regex:/^([0-9\s\-\+\(\)]*)$/|min:7|unique:users,mobile',
             'password' => 'required_without:user_id|string',
             // Seller fields
-            'user_id' => 'nullable|exists:users,id',
+//            'user_id' => 'nullable|exists:users,id',
             'address' => 'required|string|max:255',
             'city' => 'required|string|max:255',
             'state' => 'required|string|max:255',
@@ -47,7 +47,7 @@ class StoreSellerRequest extends FormRequest
             'national_identity_card' => 'required|image|mimes:jpeg,png,jpg,webp|max:2048',
             'authorized_signature' => 'required|image|mimes:jpeg,png,jpg,webp|max:2048',
         ];
-        if (!Route::is('seller.register')) {
+        if (!Route::is('seller-api.register')) {
             $rules['verification_status'] = ['required', new Enum(SellerVerificationStatusEnum::class)];
             $rules['visibility_status'] = ['required', new Enum(SellerVisibilityStatusEnum::class)];
         }

@@ -23,6 +23,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 class Category extends Model implements HasMedia
 {
     use SoftDeletes, InteractsWithMedia;
+
     protected $appends = ['image', 'banner', 'icon', 'active_icon', 'background_image'];
 
     protected $fillable = [
@@ -35,6 +36,7 @@ class Category extends Model implements HasMedia
         'requires_approval',
         'commission',
         'sort_order',
+        'is_home_category',
         'background_type',
         'background_color',
         'font_color',
@@ -43,6 +45,7 @@ class Category extends Model implements HasMedia
 
     protected $casts = [
         'requires_approval' => 'boolean',
+        'is_home_category' => 'boolean',
         'commission' => 'decimal:2',
         'background_type' => CategoryBackgroundTypeEnum::class,
         'metadata' => 'array',
@@ -71,7 +74,7 @@ class Category extends Model implements HasMedia
 
     public function getImageAttribute(): ?string
     {
-        return $this->getFirstMediaUrl('image');
+        return (!empty($this->getFirstMediaUrl('image')) ? $this->getFirstMediaUrl('image') : asset('assets/images/category-placeholder.png'));
     }
 
     public function getBannerAttribute(): ?string
@@ -114,6 +117,24 @@ class Category extends Model implements HasMedia
     public function scopeOrdered($query)
     {
         return $query->orderBy('sort_order');
+    }
+
+    public function getCategoryHierarchy(): array
+    {
+        $hierarchy = [];
+        $current = $this;
+
+        while ($current) {
+            array_unshift($hierarchy, [
+                'id' => $current->id,
+                'uuid' => $current->uuid,
+                'title' => $current->title,
+                'slug' => $current->slug
+            ]);
+            $current = $current->parent;
+        }
+
+        return $hierarchy;
     }
 
     public function registerMediaCollections(): void

@@ -15,7 +15,9 @@ class CheckInstallation
      */
     public function handle(Request $request, Closure $next): Response
     {
-       
+        if (!file_exists(storage_path('installed')) && request()->segment(1) !== 'install') {
+            return redirect()->route('LaravelInstaller::welcome');
+        }
         return $next($request);
     }
 }

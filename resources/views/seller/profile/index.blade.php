@@ -79,6 +79,12 @@
                                     </div>
                                     <div class="col-md-6">
                                         <div class="mb-3">
+                                            <label class="form-label">{{ __('labels.user_id') }}</label>
+                                            <div class="form-control-plaintext">{{ $user->id }}</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
                                             <label class="form-label">{{ __('labels.created_at') }}</label>
                                             <div
                                                 class="form-control-plaintext">{{ $user->created_at->format('M d, Y') }}</div>

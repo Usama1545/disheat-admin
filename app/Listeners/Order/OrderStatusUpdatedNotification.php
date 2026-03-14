@@ -76,28 +76,37 @@ class OrderStatusUpdatedNotification
             ];
 
         }
-        if ($event->newStatus === OrderStatusEnum::ASSIGNED()) {
+
+        if ($event->orderItem->order && (string)$event->orderItem->order->status === OrderStatusEnum::ASSIGNED()) {
             return [
                 'title' => 'Delivery Partner Assigned',
-                'body' => 'A delivery partner has been assigned for your order #"' . $event->orderItem->order->id . '".',
+                'body' => $sendTo === 'seller'
+                    ? ('A delivery partner has been assigned for Order #' . ($event->orderItem->order->id ?? '-') . '.')
+                    : ('A delivery partner has been assigned for your order #' . ($event->orderItem->order->id ?? '-') . '.'),
                 'image' => $event->orderItem->product->main_image ?? null,
                 'data' => [
                     'order_slug' => $event->orderItem->order->slug,
                     'order_id' => $event->orderItem->order_id,
-                    'status' => $event->orderItem->status,
-                    'type' => NotificationTypeEnum::DELIVERY(),
+                    'status' => $event->orderItem->order->status ?? '',
+                    'type' => NotificationTypeEnum::ORDER_UPDATE(),
                 ],
             ];
         }
+        $order = $event->orderItem->order;
+        $status = $order->status ?? '';
+
+        // Default order-level update
         return [
-            'title' => 'Order Item Update: ' . $event->orderItem->title,
-            'body' => 'The order item "' . $event->orderItem->title . '" from order #' . $event->orderItem->order->id . ' is now ' . ucfirst($event->orderItem->status) . '.',
+            'title' => 'Order Status Updated',
+            'body' => $sendTo === 'seller'
+                ? ('Order #' . ($order->id ?? '-') . ' is now ' . ucfirst(str_replace('_', ' ', $status)) . '.')
+                : ('Your order #' . ($order->id ?? '-') . ' is now ' . ucfirst(str_replace('_', ' ', $status)) . '.'),
             'image' => $event->orderItem->product->main_image ?? null,
             'data' => [
-                'order_slug' => $event->orderItem->order->slug,
-                'order_id' => $event->orderItem->order_id,
-                'status' => $event->orderItem->status,
-                'type' => NotificationTypeEnum::DELIVERY(),
+                'order_slug' => $order->slug ?? null,
+                'order_id' => $order->id ?? null,
+                'status' => $status,
+                'type' => NotificationTypeEnum::ORDER_UPDATE(),
             ],
         ];
     }

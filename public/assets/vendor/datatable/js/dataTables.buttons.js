@@ -2068,35 +2068,35 @@ Buttons.entityDecoder = function (fn) {
 /**
  * Common function for stripping HTML comments
  *
- * @param {*} input 
- * @returns 
+ * @param {*} input
+ * @returns
  */
 Buttons.stripHtmlComments = function (input) {
-	var previous;  
-	
-	do {  
+	var previous;
+
+	do {
 		previous = input;
 		input = input.replace(/(<!--.*?--!?>)|(<!--[\S\s]+?--!?>)|(<!--[\S\s]*?$)/g, '');
-	} while (input !== previous);  
+	} while (input !== previous);
 
-	return input;  
+	return input;
 };
 
 /**
  * Common function for stripping HTML script tags
  *
- * @param {*} input 
- * @returns 
+ * @param {*} input
+ * @returns
  */
 Buttons.stripHtmlScript = function (input) {
-	var previous;  
-	
-	do {  
+	var previous;
+
+	do {
 		previous = input;
 		input = input.replace(/<script\b[^<]*(?:(?!<\/script[^>]*>)<[^<]*)*<\/script[^>]*>/gi, '');
-	} while (input !== previous);  
+	} while (input !== previous);
 
-	return input;  
+	return input;
 };
 
 /**

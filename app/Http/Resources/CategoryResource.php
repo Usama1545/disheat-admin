@@ -24,6 +24,7 @@ class CategoryResource extends JsonResource
             'background_image' => $this->background_image ?? '',
             'font_color' => $this->font_color ?? '',
             'parent_id' => $this->parent_id,
+            'commission' => $this->commission ?? 0,
             'parent_slug' => $this->parent->slug ?? null,
             'description' => $this->description,
             'status' => $this->status,
@@ -31,6 +32,8 @@ class CategoryResource extends JsonResource
             'metadata' => $this->metadata,
             'subcategory_count' => $this->children_count ?? 0,
             'product_count' => $this->products_count ?? 0,
+            // Optional flag injected by controllers to indicate if this option is currently selectable
+            'enabled' => (bool) data_get($this->resource, 'enabled', true),
         ];
     }
 }

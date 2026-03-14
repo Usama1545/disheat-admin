@@ -31,6 +31,19 @@ document.addEventListener('DOMContentLoaded', () => {
             maxFileSize: '100MB',
             files: []
         })
+        const imagesZip = document.querySelector('[name="images-zip"]');
+        FilePond.create(imagesZip, {
+            allowImagePreview: false, // Disable image preview for non-image files
+            credits: false,
+            storeAsFile: true,
+            acceptedFileTypes: [
+                'application/zip',
+                'application/x-zip-compressed',
+                'multipart/x-zip',
+            ],
+            maxFileSize: '200MB',
+            files: []
+        })
 
         function initializeFilePond(inputName, allowFileTypes = ['image/*'], maxFileSize = null, extraOptions = {}) {
             const input = document.querySelector(`[name="${inputName}"]`);
@@ -84,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
         initializeFilePond('siteHeaderLogo');
         initializeFilePond('siteFooterLogo');
         initializeFilePond('banner_image');
-        initializeFilePond('favicon', ['image/png']);
+        initializeFilePond('favicon', ['image/png','image/webp']);
         initializeFilePond('logo');
         initializeFilePond('store_logo');
         initializeFilePond('store_banner');

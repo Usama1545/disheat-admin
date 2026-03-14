@@ -47,6 +47,7 @@ class OrderResource extends JsonResource
             'status' => $this->status,
             'invoice' => url('order-invoice?id=' . $this->uuid) ?? "",
             'fulfillment_type' => $this->fulfillment_type,
+            'is_rush_order' => $this->is_rush_order,
             'estimated_delivery_time' => $this->estimated_delivery_time,
             'delivery_time_slot_id' => $this->delivery_time_slot_id,
             'delivery_boy_id' => $this->delivery_boy_id,

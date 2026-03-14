@@ -4,6 +4,9 @@ namespace App\Services;
 
 use App\Enums\ActiveInactiveStatusEnum;
 use App\Enums\Product\ProductVarificationStatusEnum;
+use App\Enums\Store\StoreVerificationStatusEnum;
+use App\Enums\Store\StoreVisibilityStatusEnum;
+use App\Http\Resources\StoreResource;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\DeliveryZone;
@@ -471,9 +474,9 @@ class DeliveryZoneService
             return false;
         }
 
-        // Check if user location is within any delivery zone
+        // Check if user location is within any delivery zone (polygon or radius)
         foreach ($deliveryZones as $zone) {
-            if (self::isPointInPolygon($zone, $userLat, $userLng)) {
+            if (self::containsPoint($zone, $userLat, $userLng)) {
                 return true;
             }
         }
@@ -826,6 +829,56 @@ class DeliveryZoneService
             'total_distance' => round($totalDistance, 2),
             'route' => collect($route)->pluck('id')->toArray(),
             'route_details' => $routeDetails
+        ];
+    }
+
+    /**
+     * Get stores within map viewport (bounding box)
+     */
+    public static function getStoresByBounds(
+        float $neLat,
+        float $neLng,
+        float $swLat,
+        float $swLng,
+        float $user_lat = null,
+        float $user_lng = null,
+        int   $limit = 200
+    ): array
+    {
+
+        // Validate coordinates
+        if (
+            !DeliveryZoneService::validateCoordinates($neLat, $neLng) ||
+            !DeliveryZoneService::validateCoordinates($swLat, $swLng)
+        ) {
+            return [
+                'success' => false,
+                'message' => __('labels.invalid_coordinates'),
+                'data' => ['stores' => []]
+            ];
+        }
+
+        $stores = Store::whereBetween('latitude', [$swLat, $neLat])
+            ->whereBetween('longitude', [$swLng, $neLng])
+            ->where('visibility_status', StoreVisibilityStatusEnum::VISIBLE())
+            ->where('verification_status', StoreVerificationStatusEnum::APPROVED())
+            ->with('zones')
+            ->limit($limit)
+            ->get();
+
+        $stores = $stores->transform(function ($store) use ($user_lat, $user_lng) {
+            $store->user_latitude = $user_lat;
+            $store->user_longitude = $user_lng;
+            return new StoreResource($store);
+        });
+
+        return [
+            'success' => true,
+            'message' => __('labels.stores_found'),
+            'data' => [
+                'count' => $stores->count(),
+                'stores' => $stores
+            ]
         ];
     }
 }

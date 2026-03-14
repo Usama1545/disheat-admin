@@ -21,7 +21,7 @@ return new class extends Migration {
             $table->decimal('currency_rate', 10, 6);
             $table->string('payment_method');
             $table->string('payment_status');
-            $table->enum('fulfillment_type', ['disheat', 'regular'])->default('disheat');
+            $table->enum('fulfillment_type', ['hyperlocal', 'regular'])->default('hyperlocal');
             $table->integer('estimated_delivery_time')->nullable();
             $table->foreignId('delivery_time_slot_id')->nullable()->constrained();
             $table->foreignId('delivery_boy_id')->nullable()->constrained();

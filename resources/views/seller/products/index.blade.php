@@ -30,35 +30,22 @@
                             </div>
                             <div class="card-actions">
                                 <div class="row g-2">
-                                    <div class="col-auto">
-                                        <select class="form-select" id="productTypeFilter">
-                                            <option value="">{{ __('labels.product_type') }}</option>
-                                            @foreach(\App\Enums\Product\ProductTypeEnum::values() as $type)
-                                                <option value="{{ $type }}">{{ ucfirst($type) }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="col-auto">
-                                        <select class="form-select" id="productStatusFilter">
-                                            <option value="">{{ __('labels.product_status') }}</option>
-                                            @foreach(\App\Enums\Product\ProductStatusEnum::values() as $type)
-                                                <option value="{{ $type }}">{{ ucfirst($type) }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="col-auto">
-                                        <select class="form-select" id="productVerificationStatusFilter">
-                                            <option value="">{{ __('labels.verification_status') }}</option>
-                                            @foreach(\App\Enums\Product\ProductVarificationStatusEnum::values() as $type)
-                                                <option value="{{ $type }}">{{ ucfirst(\Illuminate\Support\Str::replace("_", " ",$type)) }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="col-auto">
-                                        <select class="form-select" id="productCategoryFilter" placeholder="{{ __('labels.category') }}">
-                                        </select>
-                                    </div>
                                     @if($createPermission ?? false)
+                                        <div class="col-auto">
+                                            <a href="{{ route('seller.products.bulk-upload') }}"
+                                               class="btn btn-outline-primary d-none d-sm-inline-block">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24"
+                                                     height="24"
+                                                     viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                                                     fill="none"
+                                                     stroke-linecap="round" stroke-linejoin="round">
+                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                                    <path d="M12 5l0 14"/>
+                                                    <path d="M5 12l14 0"/>
+                                                </svg>
+                                                {{ __('labels.bulk_upload') }}
+                                            </a>
+                                        </div>
                                         <div class="col-auto">
                                             <a href="{{ route('seller.products.create') }}"
                                                class="btn btn-primary d-none d-sm-inline-block">
@@ -92,6 +79,49 @@
                             </div>
                         </div>
                         <div class="card-table">
+                            <div class="card-actions mt-3 ms-2">
+                                <div class="row g-2">
+                                    <div class="col-auto">
+                                        <select class="form-select" id="productTypeFilter">
+                                            <option value="">{{ __('labels.product_type') }}</option>
+                                            @foreach(\App\Enums\Product\ProductTypeEnum::values() as $type)
+                                                <option value="{{ $type }}">{{ ucfirst($type) }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-auto">
+                                        <select class="form-select" id="productStatusFilter">
+                                            <option value="">{{ __('labels.product_status') }}</option>
+                                            @foreach(\App\Enums\Product\ProductStatusEnum::values() as $type)
+                                                <option value="{{ $type }}">{{ ucfirst($type) }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-auto">
+                                        <select class="form-select" id="productVerificationStatusFilter">
+                                            <option value="">{{ __('labels.verification_status') }}</option>
+                                            @foreach(\App\Enums\Product\ProductVarificationStatusEnum::values() as $type)
+                                                <option
+                                                    value="{{ $type }}">{{ ucfirst(\Illuminate\Support\Str::replace("_", " ",$type)) }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-auto">
+                                        <select class="form-select" id="productFilter">
+                                            <option value="">{{ __('labels.product_filter') }}</option>
+                                            @foreach(\App\Enums\Product\ProductFilterEnum::values() as $filter)
+                                                <option
+                                                    value="{{ $filter }}">{{ ucfirst(\Illuminate\Support\Str::replace("_", " ",$filter)) }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-auto">
+                                        <select class="form-select" id="productCategoryFilter"
+                                                placeholder="{{ __('labels.category') }}">
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
                             <div class="row w-full p-3">
                                 <x-datatable id="products-table" :columns="$columns"
                                              route="{{ route('seller.products.datatable') }}"

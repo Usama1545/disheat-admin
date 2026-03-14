@@ -43,6 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     submitButton.disabled = false;
                     submitButton.innerHTML = originalButtonContent;
                     let data = response.data;
+
                     if (data.success === false) {
                         return Toast.fire({
                             icon: "error",
@@ -56,6 +57,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         console.log(e);
                     }
                     clearValidationErrors(form);
+                    if (data.data && data.data.redirect_url) {
+                        Toast.fire({
+                            icon: "success",
+                            title: data.message
+                        });
+                        window.location.href = data.data.redirect_url;
+                        return;
+                    }
                     return Toast.fire({
                         icon: "success",
                         title: data.message
@@ -769,13 +778,13 @@ document.addEventListener("DOMContentLoaded", function () {
             load: function (query, callback) {
                 if (!query.length) return callback();
                 let url = base_url + "/currency?search=" + encodeURIComponent(query);
-                fetch(url)
-                    .then(response => response.json())
-                    .then(json => {
-                        callback(json);
-                    }).catch(() => {
+                axios.get(url)
+                .then(response => {
+                    callback(response.data);
+                })
+                .catch(() => {
                     callback();
-                });
+                })
             }
         });
         if (selectedCurrency && selectedCurrency.value) {

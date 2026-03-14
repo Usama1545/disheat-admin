@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Enums\AdminPermissionEnum;
 use App\Enums\DefaultSystemRolesEnum;
+use App\Enums\Seller\SellerVerificationStatusEnum;
+use App\Enums\Seller\SellerVisibilityStatusEnum;
 use App\Enums\SpatieMediaCollectionName;
 use App\Events\Seller\SellerStatusUpdated;
 use App\Events\Seller\SellerUpdated;

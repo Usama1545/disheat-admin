@@ -57,16 +57,67 @@
                                         </div>
                                         <div class="mb-3">
                                             <label class="form-label">{{ __('labels.service_account_file') }}</label>
-                                            <input type="file" class="form-control" name="serviceAccountFile"
-                                                   data-service-url="{{ !empty($settings['serviceAccountFile']) ? url('storage/' . $settings['serviceAccountFile']) : '' }}"/>
-                                            <small class="form-text text-muted">{{ __('messages.service_account_file_description') }}</small>
+                                            @if((!$systemSettings['demoMode'] ?? true) && $settings['serviceAccountFileExist'])
+                                                <pre class="p-3 rounded bg-gray-700"
+                                                     style="max-height: 400px; overflow: auto; font-size: 0.9rem;">
+                                                {{ json_encode($settings['serviceAccountFileData'] ?? null, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) }}
+                                                </pre>
+                                            @endif
+                                            <input type="file" class="form-control" name="serviceAccountFile"/>
                                         </div>
+
                                         <div class="mb-3">
-                                            <label class="form-label">{{ __('labels.vap_id_key') }}</label>
-                                            <input type="text" class="form-control" name="vapIdKey"
-                                                   placeholder="{{ __('labels.vap_id_key_placeholder') }}"
-                                                   value="{{ ($systemSettings['demoMode'] ?? false) ? Str::mask(($settings['vapIdKey'] ?? '****'), '****', 3, 8) : ($settings['vapIdKey'] ?? '') }}"/>
                                         </div>
+                                        @php
+                                            // Use dynamic paths so this works across environments
+                                            $cronLogPath = storage_path('logs/cron-log.txt');
+                                            $cronLogExists = file_exists($cronLogPath);
+                                            $cronLogMTime = $cronLogExists ? @filemtime($cronLogPath) : null;
+                                        @endphp
+                                        <div class="mb-3">
+                                            <label class="form-label">{{ __('labels.cron_job_queue_worker') }}</label>
+
+                                            <div class="text-muted mb-2">
+                                                {{ __('messages.add_cron_instruction') }}
+                                            </div>
+
+                                            <pre class="p-3 rounded bg-gray-700 text-white" style="overflow:auto; font-size:0.9rem;">
+                                                * * * * * /usr/bin/php {{ base_path('artisan') }} queue:work --stop-when-empty >> {{ storage_path('logs/cron-log.txt') }} 2>&1
+                                            </pre>
+
+                                            <div class="small text-muted">
+                                                {{ __('messages.php_path_note') }}
+                                            </div>
+
+                                            <div class="mt-3">
+                                                @if($cronLogExists)
+                                                    <div class="alert alert-success" role="alert">
+                                                        {{ __('labels.cron_status') }}: {{ __('messages.cron_detected', ['path' => $cronLogPath]) }}
+                                                        @if($cronLogMTime)
+                                                            <div class="small mt-1">
+                                                                {{ __('labels.last_updated') }}:
+                                                                {{ \Carbon\Carbon::createFromTimestamp($cronLogMTime)->toDayDateTimeString() }}
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                @else
+                                                    <div class="alert alert-warning flex-column" role="alert">
+                                                        <div>{{ __('messages.cron_not_detected_full') }}</div>
+                                                        <div>{{ __('labels.cron_not_detected') }}. {{ __('messages.log_file_not_found') }}</div>
+                                                        <code>{{ $cronLogPath }}</code>
+                                                        <div>{{ __('messages.cron_has_not_run_yet') }}</div>
+
+                                                        <div class="mt-2">
+                                                            {{ __('messages.view_documentation') }}:
+                                                            <a href="https://docs-hyper-local.vercel.app/introduction" target="_blank" class="alert-link">
+                                                                {{ __('labels.please_refer_to_docs') }}
+                                                            </a>.
+                                                        </div>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        </div>
+
                                     </div>
                                 </div>
                                 <div class="card-footer text-end">

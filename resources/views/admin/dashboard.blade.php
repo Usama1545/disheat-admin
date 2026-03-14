@@ -578,22 +578,22 @@
                                     <div class="avatar avatar-sm me-3 bg-warning text-white">
                                         @if(!empty($deliveryBoy['avatar']))
                                             <img src="{{ $deliveryBoy['avatar'] }}"
-                                                 alt="{{ $deliveryBoy['name'] }}"
+                                                 alt="{{ ($deliveryBoy['name'] ?? "") }}"
                                                  class="rounded">
                                         @else
-                                            {{ strtoupper(substr($deliveryBoy['name'], 0, 2)) }}
+                                            {{ strtoupper(substr(($deliveryBoy['name'] ?? ""), 0, 2)) }}
                                         @endif
                                     </div>
 
                                     <div class="flex-fill">
-                                        <div class="font-weight-medium text-capitalize">{{ $deliveryBoy['name'] }}</div>
+                                        <div class="font-weight-medium text-capitalize">{{ ($deliveryBoy['name'] ?? "") }}</div>
                                         <div class="text-secondary">
-                                            {{ $deliveryBoy['total_deliveries'] }} {{ __('labels.deliveries') }}
+                                            {{ $deliveryBoy['total_deliveries'] ?? 0 }} {{ __('labels.deliveries') }}
                                         </div>
                                     </div>
 
                                     <div class="text-end">
-                                        <div class="font-weight-medium">{{ $deliveryBoy['total_revenue'] }}</div>
+                                        <div class="font-weight-medium">{{ $deliveryBoy['total_revenue'] ?? 0 }}</div>
                                     </div>
                                 </div>
                             @empty
@@ -614,10 +614,10 @@
             <div class="col-12">
                 <div class="card">
                     <div class="card-header">
-                        <div class="d-flex align-items-center">
+                        <div class="d-flex align-items-center flex-wrap">
                             <h3 class="card-title">{{ __('labels.categories') }}</h3>
                             <div class="ms-auto">
-                                <div class="d-flex gap-2">
+                                <div class="d-flex gap-2 flex-wrap">
                                     <div class="dropdown ps-2">
                                         <a class="dropdown-toggle text-secondary" href="#"
                                            data-bs-toggle="dropdown"

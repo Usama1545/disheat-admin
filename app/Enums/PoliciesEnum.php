@@ -17,4 +17,6 @@ enum PoliciesEnum: string
     case ABOUTUS = 'aboutus';
     case DELIVERY_PRIVACY = 'delivery_privacy';
     case DELIVERY_TERMS = 'delivery_terms';
+    case SELLER_PRIVACY = 'seller_privacy';
+    case SELLER_TERMS = 'seller_terms';
 }

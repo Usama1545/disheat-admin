@@ -5,6 +5,7 @@ let polygon = null; // Current drawn polygon
 let originalPolygon = null; // Original polygon if exists
 let drawingManager;
 let center = {lat: 40.749933, lng: -73.98633}; // Default center: NYC
+let otherZonePolygons = []; // Other delivery zones overlays
 
 async function initMap() {
     // Load needed libraries (marker, places, drawing)
@@ -115,6 +116,13 @@ async function initMap() {
         }
     }
 
+    // Render other delivery zones in blue (non-interactive) so admin can see nearby zones
+    try {
+        await renderOtherDeliveryZonesOnForm();
+    } catch (e) {
+        console.warn('Unable to render other delivery zones on form:', e);
+    }
+
     // Clear last polygon button
     document.getElementById('clear-last')?.addEventListener('click', function () {
         if (polygon) {
@@ -145,6 +153,49 @@ async function initMap() {
             updateBoundaryInput(polygon);
             setPolygonListeners(polygon);
         }
+    });
+}
+
+// Fetch active delivery zones and draw them as blue polygons, excluding the current zone (if any)
+async function renderOtherDeliveryZonesOnForm() {
+    // Clear existing overlays
+    if (otherZonePolygons.length) {
+        otherZonePolygons.forEach(p => p.setMap(null));
+        otherZonePolygons = [];
+    }
+
+    const currentZoneIdEl = document.getElementById('current-zone-id');
+    const currentZoneId = currentZoneIdEl ? parseInt(currentZoneIdEl.value) : null;
+
+    const response = await fetch('/api/delivery-zone?per_page=500', {headers: {Accept: 'application/json'}});
+    if (!response.ok) return; // fail silently on admin form
+    const json = await response.json();
+
+    // API wraps collection inside data.data
+    const items = (json && json.data && Array.isArray(json.data.data)) ? json.data.data : (Array.isArray(json.data) ? json.data : []);
+    if (!items.length) return;
+
+    items.forEach(zone => {
+        if (currentZoneId && zone.id === currentZoneId) return; // skip current
+        if (!zone.boundary_json || !Array.isArray(zone.boundary_json) || zone.boundary_json.length < 3) return;
+        const path = zone.boundary_json
+            .map(pt => ({lat: parseFloat(pt.lat), lng: parseFloat(pt.lng)}))
+            .filter(p => !Number.isNaN(p.lat) && !Number.isNaN(p.lng));
+        if (path.length < 3) return;
+
+        const overlay = new google.maps.Polygon({
+            paths: path,
+            strokeColor: '#0066ff',
+            strokeOpacity: 0.8,
+            strokeWeight: 2,
+            fillColor: '#1a73e8',
+            fillOpacity: 0.08,
+            clickable: false, // do not intercept clicks; keep drawing/editing smooth
+            zIndex: 0, // stay beneath the editable polygon
+            map: map,
+        });
+
+        otherZonePolygons.push(overlay);
     });
 }
 

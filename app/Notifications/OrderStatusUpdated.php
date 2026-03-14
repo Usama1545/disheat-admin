@@ -4,12 +4,16 @@ namespace App\Notifications;
 
 use App\Broadcasting\FirebaseChannel;
 use App\Enums\NotificationTypeEnum;
+use App\Enums\DefaultSystemRolesEnum;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Log;
 
-class OrderStatusUpdated extends Notification
+class OrderStatusUpdated extends Notification implements ShouldQueue
 {
+    use Queueable;
 
     protected $event;
 
@@ -28,9 +32,7 @@ class OrderStatusUpdated extends Notification
      */
     public function via(object $notifiable): array
     {
-        return [
-//            'mail',
-            FirebaseChannel::class];
+        return ['database', 'mail', FirebaseChannel::class];
     }
 
     /**
@@ -38,15 +40,25 @@ class OrderStatusUpdated extends Notification
      */
     public function toFirebase($notifiable)
     {
-        return $this->event->firebaseNotification ?? [
-            'title' => 'Order Item ' . $this->event->orderItem->title . ' Update',
-            'body' => 'Your order Item is now ' . ucfirst($this->event->orderItem->status) . '.',
+        if (!empty($this->event->firebaseNotification)) {
+            return $this->event->firebaseNotification;
+        }
+
+        $order = $this->event->orderItem->order;
+        $orderStatus = (string)($order->status ?? '');
+        $isSeller = method_exists($notifiable, 'hasRole') && $notifiable->hasRole(DefaultSystemRolesEnum::SELLER());
+
+        return [
+            'title' => 'Order Status Updated',
+            'body' => $isSeller
+                ? ('Order #' . ($order->id ?? '-') . ' is now ' . ucfirst(str_replace('_', ' ', $orderStatus)) . '.')
+                : ('Your order #' . ($order->id ?? '-') . ' is now ' . ucfirst(str_replace('_', ' ', $orderStatus)) . '.'),
             'image' => $this->event->orderItem->product->main_image ?? null,
             'data' => [
-                'order_slug' => $this->event->orderItem->order->slug,
-                'order_id' => $this->event->orderItem->order_id,
-                'status' => $this->event->orderItem->status,
-                'type' => NotificationTypeEnum::DELIVERY(),
+                'order_slug' => $order->slug ?? null,
+                'order_id' => $order->id ?? null,
+                'status' => $orderStatus,
+                'type' => NotificationTypeEnum::ORDER_UPDATE(),
             ],
         ];
     }
@@ -57,21 +69,45 @@ class OrderStatusUpdated extends Notification
     public function toMail(object $notifiable): ?MailMessage
     {
         try {
-            $orderItem = $this->event->orderItem;
-            $sellerOrderItem = $this->event->sellerOrderItem;
-            $oldStatus = $this->event->oldStatus;
-            $newStatus = $this->event->newStatus;
+            // Prefer the message crafted by the listener (firebaseNotification payload)
+            if (!empty($this->event->firebaseNotification) && is_array($this->event->firebaseNotification)) {
+                $payload = $this->event->firebaseNotification;
+                $order = $this->event->orderItem->order;
 
-            return (new MailMessage)
-                ->subject('Order Status Updated - ' . now())
-                ->greeting('Hello ' . $notifiable->name . '!')
-                ->line('Your order status has been updated.')
-                ->line('Order ID: ' . $sellerOrderItem->sellerOrder->id)
-                ->line('Product: ' . $orderItem->title)
-                ->line('Previous Status: ' . $oldStatus)
-                ->line('New Status: ' . $newStatus)
-                ->action('View Order', url('seller/orders/' . $sellerOrderItem->sellerOrder->id))
-                ->line('Thank you for using our application!');
+                $mail = (new MailMessage)
+                    ->subject($payload['title'] ?? 'Order Status Updated')
+                    ->greeting('Hello ' . ($notifiable->name ?? '') . '!')
+                    ->line($payload['body'] ?? '');
+
+                $orderId = $order->id ?? null;
+                if ($orderId) {
+                    $isSeller = method_exists($notifiable, 'hasRole') && $notifiable->hasRole(DefaultSystemRolesEnum::SELLER());
+                    $url = $isSeller ? url('seller/orders/' . $orderId) : url('orders/' . $orderId);
+                    $mail->action('View Order', $url);
+                }
+
+                return $mail;
+            }
+
+            // Fallback to previous behavior if listener didn't prepare payload
+            $order = $this->event->orderItem->order;
+            $orderStatus = (string)($order->status ?? '');
+            $isSeller = method_exists($notifiable, 'hasRole') && $notifiable->hasRole(DefaultSystemRolesEnum::SELLER());
+
+            $mail = (new MailMessage)
+                ->subject('Order Status Updated')
+                ->greeting('Hello ' . ($notifiable->name ?? '') . '!')
+                ->line($isSeller
+                    ? ('Order #' . ($order->id ?? '-') . ' status updated to ' . ucfirst(str_replace('_', ' ', $orderStatus)) . '.')
+                    : ('Your order #' . ($order->id ?? '-') . ' status updated to ' . ucfirst(str_replace('_', ' ', $orderStatus)) . '.'));
+
+            $orderId = $order->id ?? null;
+            if ($orderId) {
+                $url = $isSeller ? url('seller/orders/' . $orderId) : url('orders/' . $orderId);
+                $mail->action('View Order', $url);
+            }
+
+            return $mail;
         } catch (\Throwable $e) {
             // Log error but don’t stop the process
             Log::error('Mail notification failed: ' . $e->getMessage(), [
@@ -91,12 +127,58 @@ class OrderStatusUpdated extends Notification
      */
     public function toArray(object $notifiable): array
     {
+        $order = $this->event->orderItem->order;
         return [
-            'order_item_id' => $this->event->orderItem->id,
-            'seller_order_item_id' => $this->event->sellerOrderItem->id,
-            'old_status' => $this->event->oldStatus,
-            'new_status' => $this->event->newStatus,
-            'seller_id' => $this->event->sellerOrderItem->sellerOrder->seller_id,
+            'order_id' => $order->id ?? null,
+            'order_slug' => $order->slug ?? null,
+            'status' => (string)($order->status ?? ''),
+        ];
+    }
+
+    public function toDatabase(object $notifiable): array
+    {
+        // If listener prepared a unified payload, adapt it to database structure
+        if (!empty($this->event->firebaseNotification) && is_array($this->event->firebaseNotification)) {
+            $p = $this->event->firebaseNotification;
+            $data = $p['data'] ?? [];
+            $order = $this->event->orderItem->order;
+            $isSeller = method_exists($notifiable, 'hasRole') && $notifiable->hasRole(DefaultSystemRolesEnum::SELLER());
+
+            return [
+                'title' => $p['title'] ?? 'Order Status Updated',
+                'message' => $p['body'] ?? '',
+                'type' => $data['type'] ?? NotificationTypeEnum::ORDER_UPDATE(),
+                'sent_to' => $isSeller ? 'seller' : 'customer',
+                'user_id' => $notifiable->id ?? null,
+                'store_id' => null,
+                'order_id' => $data['order_id'] ?? ($order->id ?? null),
+                'metadata' => array_merge([
+                    'order_id' => $order->id ?? null,
+                    'order_slug' => $order->slug ?? null,
+                ], $data),
+            ];
+        }
+
+        // Fallback to previous behavior
+        $order = $this->event->orderItem->order;
+        $orderStatus = (string)($order->status ?? '');
+        $isSeller = method_exists($notifiable, 'hasRole') && $notifiable->hasRole(DefaultSystemRolesEnum::SELLER());
+
+        return [
+            'title' => 'Order Status Updated',
+            'message' => $isSeller
+                ? ('Order #' . ($order->id ?? '-') . ' is now ' . ucfirst(str_replace('_', ' ', $orderStatus)) . '.')
+                : ('Your order #' . ($order->id ?? '-') . ' is now ' . ucfirst(str_replace('_', ' ', $orderStatus)) . '.'),
+            'type' => NotificationTypeEnum::ORDER_UPDATE(),
+            'sent_to' => $isSeller ? 'seller' : 'customer',
+            'user_id' => $notifiable->id ?? null,
+            'store_id' => null,
+            'order_id' => $order->id ?? null,
+            'metadata' => [
+                'order_id' => $order->id ?? null,
+                'order_slug' => $order->slug ?? null,
+                'status' => $orderStatus,
+            ],
         ];
     }
 }

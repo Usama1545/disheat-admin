@@ -33,6 +33,11 @@ class EnvironmentController extends Controller
      */
     public function environment()
     {
+        // If license is not yet set, force user to the dedicated License step
+        if (!env('LICENSE_PURCHASE_CODE') || !env('LICENSE_SIGNATURE')) {
+            return redirect()->route('LaravelInstaller::license');
+        }
+
         $envConfig = $this->environmentManager->getEnvContent();
 
         return view('vendor.installer.environment', compact('envConfig'));
@@ -44,7 +49,6 @@ class EnvironmentController extends Controller
      */
     public function save(UpdateRequest $request)
     {
-
         $message = $this->environmentManager->saveFile($request);
         return $message;
 

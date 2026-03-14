@@ -56,7 +56,7 @@ return new class extends Migration {
             $table->json('metadata');
             $table->enum('verification_status', ['approved', 'not_approved']);
             $table->enum('visibility_status', ['visible', 'draft'])->default('draft');
-            $table->enum('fulfillment_type', ['disheat', 'regular', 'both'])->default('disheat');
+            $table->enum('fulfillment_type', ['hyperlocal', 'regular', 'both'])->default('hyperlocal');
             $table->softDeletes();
             $table->timestamps();
         });

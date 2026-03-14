@@ -10,7 +10,7 @@ use ArchTech\Enums\Values;
  * Enum representing the fulfillment types for a store.
  *
  * This enum defines the different fulfillment types that a store can have,
- * such as disheat, regular, or both.
+ * such as hyperlocal, regular, or both.
  * @method static HYPERLOCAL()
  * @method static REGULAR()
  * @method static BOTH()
@@ -18,7 +18,7 @@ use ArchTech\Enums\Values;
 enum StoreFulfillmentTypeEnum: string
 {
     use InvokableCases, Values, Names;
-    case HYPERLOCAL = 'disheat';
+    case HYPERLOCAL = 'hyperlocal';
     case REGULAR = 'regular';
     case BOTH = 'both';
 }

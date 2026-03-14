@@ -21,5 +21,6 @@ enum SettingTypeEnum: string
     case WEB = 'web';
     case APP = 'app';
     case DELIVERY_BOY = 'delivery_boy';
+    case SELLER = 'seller';
     case HOME_GENERAL_SETTINGS = 'home_general_settings';
 }

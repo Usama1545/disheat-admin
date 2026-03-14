@@ -21,7 +21,7 @@ class OrderPolicy
     public function viewAny(User $user): bool
     {
         // Only the seller who owns the order can view it
-        if ($user->seller() === null) {
+        if ($user->seller() == null) {
             return $this->hasPermission(AdminPermissionEnum::ORDER_VIEW());
         }
 
@@ -43,7 +43,7 @@ class OrderPolicy
     {
         try {
             // Only the seller who owns the order can view it
-            if ($user->seller() === null) {
+            if ($user->seller() == null) {
                 return $this->hasPermission(AdminPermissionEnum::ORDER_VIEW());
             }
 
@@ -71,7 +71,7 @@ class OrderPolicy
     {
         try {
             // Only the seller who owns the order can update it
-            if ($user->seller() === null) {
+            if ($user->seller() == null) {
                 return false;
             }
 
@@ -99,7 +99,7 @@ class OrderPolicy
     {
         try {
             // Only the seller who owns the order can update its status
-            if ($user->seller() === null) {
+            if ($user->seller() == null) {
                 return false;
             }
 
@@ -126,7 +126,7 @@ class OrderPolicy
             if ($this->hasPermission(AdminPermissionEnum::ORDER_VIEW())) {
                 return true;
             }
-            if ($orderData['user_id'] === $user->id) {
+            if ($orderData['user_id'] == $user->id) {
                 return true;
             }
             return false;

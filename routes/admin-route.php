@@ -31,6 +31,7 @@ use App\Http\Controllers\StoreController;
 use App\Http\Controllers\SystemUserController;
 use App\Http\Controllers\TaxClassController;
 use App\Http\Controllers\TaxRateController;
+use App\Http\Controllers\Admin\WalletTransactionController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin')->name('admin.')->group(function () {
@@ -69,20 +70,21 @@ Route::prefix('admin')->name('admin.')->group(function () {
         });
 
         // system updates
-        // Route::prefix('system-updates')->name('system-updates.')->group(function () {
-        //     Route::get('/', [SystemUpdateController::class, 'index'])->name('index');
-        //     Route::post('/', [SystemUpdateController::class, 'store'])->name('store');
-        //     Route::get('/datatable', [SystemUpdateController::class, 'datatable'])->name('datatable');
-        //     // Live log endpoints
-        //     Route::get('/latest', [SystemUpdateController::class, 'latest'])->name('latest');
-        //     Route::get('/{update}/log', [SystemUpdateController::class, 'showLog'])->name('log');
-        // });
+        Route::prefix('system-updates')->name('system-updates.')->group(function () {
+            Route::get('/', [SystemUpdateController::class, 'index'])->name('index');
+            Route::post('/', [SystemUpdateController::class, 'store'])->name('store');
+            Route::get('/datatable', [SystemUpdateController::class, 'datatable'])->name('datatable');
+            // Live log endpoints
+            Route::get('/latest', [SystemUpdateController::class, 'latest'])->name('latest');
+            Route::get('/{update}/log', [SystemUpdateController::class, 'showLog'])->name('log');
+        });
 
         // categories
         Route::prefix('categories')->namespace('Categories')->name('categories.')->group(function () {
             Route::get('/', [CategoryController::class, 'index'])->name('index');
             Route::get('/sort', [CategoryController::class, 'sort'])->name('sort');
             Route::post('/sort', [CategoryController::class, 'updateSort'])->name('sort.update');
+            Route::post('/home-categories', [CategoryController::class, 'updateHomeCategories'])->name('home-categories.update');
             Route::post('/', [CategoryController::class, 'store'])->name('store');
             Route::post('/bulk-upload', [CategoryController::class, 'bulkUpload'])->name('bulk-upload');
             Route::get('/{id}/edit', [CategoryController::class, 'show'])->name('edit');
@@ -218,6 +220,18 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/datatable', [BannerController::class, 'getBanners'])->name('datatable');
         });
 
+        // wallet transactions and deposits
+        Route::prefix('wallet')->name('wallet.')->group(function () {
+            // All transactions
+            Route::get('/transactions', [WalletTransactionController::class, 'transactions'])->name('transactions');
+            Route::get('/transactions/datatable', [WalletTransactionController::class, 'transactionsDatatable'])->name('transactions.datatable');
+
+            // Pending deposits
+            Route::get('/deposits', [WalletTransactionController::class, 'deposits'])->name('deposits');
+            Route::get('/deposits/datatable', [WalletTransactionController::class, 'depositsDatatable'])->name('deposits.datatable');
+            Route::post('/deposits/{id}/process', [WalletTransactionController::class, 'processDeposit'])->name('deposits.process');
+        });
+
         Route::get('products/search', [ProductController::class, 'search'])->name('products.search');
 
         // delivery zones
@@ -335,6 +349,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/', [ProductController::class, 'index'])->name('index');
             Route::get('/datatable', [ProductController::class, 'getProducts'])->name('datatable');
             Route::get('/search', [ProductController::class, 'search'])->name('search');
+            Route::get('/download-template', [ProductController::class, 'downloadTemplate'])->name('download-template');
             Route::get('/{id}/pricing', [ProductController::class, 'getProductPricing'])->name('pricing');
             Route::post('/{id}/verification-status', [ProductController::class, 'updateVerificationStatus'])->name('update-verification-status');
             Route::post('/{id}/update-status', [ProductController::class, 'updateStatus'])->name('update-status');

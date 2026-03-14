@@ -19,86 +19,75 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\ValidationException;
+use App\Enums\SellerPermissionEnum;
 
 trait AuthTrait
 {
     /**
-     * Login
+     * Store or update FCM token for a user if provided in the request
      */
-    public function login(Request $request): JsonResponse
+    protected function storeFcmToken(Request $request, User $user): void
     {
-        log::info('login', ['request' => $request->all()]);
         try {
-            // Validate either email or mobile with password
-            $validated = $request->validate([
-                'email' => 'required_without:mobile|email',
-                'mobile' => 'required_without:email|numeric',
-                'password' => 'required',
-            ]);
+            $fcmToken = $request->input('fcm_token');
+            $deviceType = $request->input('device_type');
 
-            // Build credentials based on provided identifier
-            $identifierField = $request->filled('email') ? 'email' : 'mobile';
-            $identifierValue = $request->input($identifierField);
-            $credentials = [
+            if (!empty($fcmToken) && !empty($deviceType)) {
+                UserFcmToken::updateOrCreate(
+                    [
+                        'fcm_token' => $fcmToken,
+                    ],
+                    [
+                        'user_id' => $user->id,
+                        'device_type' => $deviceType,
+                    ]
+                );
+            }
+        } catch (\Throwable $e) {
+            Log::error('Error updating or creating FCM token: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Build credentials and return identifier meta
+     *
+     * @return array{credentials: array, field: string, value: mixed}
+     */
+    protected function buildCredentials(Request $request, array $validated): array
+    {
+        $identifierField = $request->filled('email') ? 'email' : 'mobile';
+        $identifierValue = $request->input($identifierField);
+
+        return [
+            'credentials' => [
                 $identifierField => $identifierValue,
                 'password' => $validated['password'],
-            ];
+            ],
+            'field' => $identifierField,
+            'value' => $identifierValue,
+        ];
+    }
 
-            // Optional role-based access check (admin/seller), if the controller sets $role
-            if (property_exists($this, 'role')) {
-                $role = $this->role;
-                $userForRoleCheck = User::where($identifierField, $identifierValue)->first();
+    /**
+     * Perform optional role-based gate checks; returns a response if blocked, or null if allowed
+     */
+    protected function checkRoleAccess(?string $role, string $identifierField, $identifierValue): ?JsonResponse
+    {
+        if (!$role) {
+            return null;
+        }
 
-                if (!$userForRoleCheck) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => __('labels.invalid_credentials'),
-                        'data' => []
-                    ]);
-                }
+        $userForRoleCheck = User::where($identifierField, $identifierValue)->first();
+        if (!$userForRoleCheck) {
+            return response()->json([
+                'success' => false,
+                'message' => __('labels.invalid_credentials'),
+                'data' => []
+            ]);
+        }
 
-                if ($role === 'seller') {
-                    if (!empty($userForRoleCheck->access_panel?->value) && $userForRoleCheck->access_panel->value !== 'seller') {
-                        return response()->json([
-                            'success' => false,
-                            'message' => __('labels.invalid_credentials'),
-                            'data' => []
-                        ]);
-                    }
-
-                    // Also validate seller linkage and verification status during login
-                    $seller = $userForRoleCheck->seller();
-
-                    if (!$seller) {
-                        return response()->json([
-                            'success' => false,
-                            'message' => __('labels.not_a_seller') ?? 'Not a seller account.',
-                            'data' => []
-                        ], 403);
-                    }
-
-                    if ($seller->verification_status !== SellerVerificationStatusEnum::Approved()) {
-                        return response()->json([
-                            'success' => false,
-                            'message' => __('labels.account_not_verified') ?? 'Your seller account is not approved yet.',
-                            'data' => [
-                                'verification_status' => $seller->verification_status,
-                            ]
-                        ], 403);
-                    }
-                }
-                if ($role === 'admin') {
-                    if (!empty($userForRoleCheck->access_panel?->value) && $userForRoleCheck->access_panel->value !== 'admin') {
-                        return response()->json([
-                            'success' => false,
-                            'message' => __('labels.invalid_credentials'),
-                            'data' => []
-                        ]);
-                    }
-                }
-            }
-
-            if (!FacadesAuth::attempt($credentials)) {
+        if ($role === 'seller') {
+            if (!empty($userForRoleCheck->access_panel?->value) && $userForRoleCheck->access_panel->value !== 'seller') {
                 return response()->json([
                     'success' => false,
                     'message' => __('labels.invalid_credentials'),
@@ -106,40 +95,128 @@ trait AuthTrait
                 ]);
             }
 
-            $user = $request->user();
-            try {
-                if (!empty($request['fcm_token']) && !empty($request['device_type'])) {
-                    UserFcmToken::updateOrCreate(
-                        [
-                            'fcm_token' => $request['fcm_token'],
-                        ],
-                        [
-                            'user_id' => $user->id,
-                            'device_type' => $request['device_type'],
-                        ]
-                    );
-                }
-            } catch (\Exception $e) {
-                Log::error('Error updating or creating FCM token: ' . $e->getMessage());
+            $seller = $userForRoleCheck->seller();
+            if (!$seller) {
+                return response()->json([
+                    'success' => false,
+                    'message' => __('labels.not_a_seller') ?? 'Not a seller account.',
+                    'data' => []
+                ], 403);
             }
-            $token = $user->createToken($user->email ?? ($user->mobile ?? 'api-token'))->plainTextToken;
-            event(new UserLoggedIn($user));
+
+            if ($seller->verification_status !== SellerVerificationStatusEnum::Approved()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => __('labels.account_not_verified') ?? 'Your seller account is not approved yet.',
+                    'data' => [
+                        'verification_status' => $seller->verification_status,
+                    ]
+                ], 403);
+            }
+        }
+
+        if ($role === 'admin' && !empty($userForRoleCheck->access_panel?->value) && $userForRoleCheck->access_panel->value !== 'admin') {
             return response()->json([
-                'success' => true,
-                'message' => __('labels.login_successful'),
-                'access_token' => $token,
-                'token_type' => 'Bearer',
-                'data' => new UserResource($user)
+                'success' => false,
+                'message' => __('labels.invalid_credentials'),
+                'data' => []
             ]);
+        }
+
+        return null;
+    }
+
+    /** Attempt to authenticate with given credentials */
+    protected function attemptAuthentication(array $credentials): bool
+    {
+        return FacadesAuth::attempt($credentials);
+    }
+
+    /** Finalize successful login */
+    protected function finalizeLogin(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $this->storeFcmToken($request, $user);
+        $token = $user->createToken($user->email ?? ($user->mobile ?? 'api-token'))->plainTextToken;
+        event(new UserLoggedIn($user));
+
+        // Determine assigned permissions for seller logins
+        $assignedPermissions = [];
+        try {
+            if (!empty($user->access_panel?->value) && $user->access_panel->value === 'seller') {
+                $seller = $user->seller();
+                if ($seller) {
+                    // If the logged-in user is the main seller (owner of the seller record), grant all permissions
+                    if ((int) $seller->user_id === (int) $user->id) {
+                        $assignedPermissions = SellerPermissionEnum::values();
+                    } else {
+                        // For system users under a seller, fetch permissions assigned within the seller team context
+                        if (function_exists('setPermissionsTeamId')) {
+                            setPermissionsTeamId($seller->id);
+                        }
+                        $assignedPermissions = $user->getAllPermissions()->pluck('name')->toArray();
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            // Fail silently; permissions are best-effort and should not break login
+            Log::warning('Failed determining seller permissions on login: ' . $e->getMessage());
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => __('labels.login_successful'),
+            'access_token' => $token,
+            'token_type' => 'Bearer',
+            'data' => new UserResource($user),
+            // Pass assigned permissions (array of names). For main seller, this will be the full SellerPermissionEnum values
+            'assigned_permissions' => $assignedPermissions,
+        ]);
+    }
+
+    /**
+     * Login
+     */
+    public function login(Request $request): JsonResponse
+    {
+        try {
+            // 1) Validate input
+            $validated = $request->validate([
+                'email' => 'required_without:mobile|email',
+                'mobile' => 'required_without:email|numeric',
+                'password' => 'required',
+            ]);
+
+            // 2) Build credentials and identifier
+            $meta = $this->buildCredentials($request, $validated);
+            $credentials = $meta['credentials'];
+            $identifierField = $meta['field'];
+            $identifierValue = $meta['value'];
+
+            // 3) Optional role-based access check (admin/seller)
+            $role = property_exists($this, 'role') ? $this->role : null;
+            if ($response = $this->checkRoleAccess($role, $identifierField, $identifierValue)) {
+                return $response;
+            }
+
+            // 4) Attempt authentication
+            if (!$this->attemptAuthentication($credentials)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => __('labels.invalid_credentials'),
+                    'data' => []
+                ]);
+            }
+
+            // 5) Finalize login response
+            return $this->finalizeLogin($request);
         } catch (ValidationException $e) {
-            dd('error', $e);
             return response()->json([
                 'success' => false,
                 'message' => __('labels.validation_error') . ":- " . $e->getMessage(),
                 'data' => []
             ]);
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => __('labels.login_failed', ['error' => $e->getMessage()]),
@@ -187,6 +264,7 @@ trait AuthTrait
                 // Do not block registration if wallet credit fails; log and continue
                 Log::error('Welcome wallet credit failed for user ' . $user->id . ': ' . $th->getMessage());
             }
+            $this->storeFcmToken($request, $user);
             event(new UserRegistered($user));
             return response()->json([
                 'success' => true,

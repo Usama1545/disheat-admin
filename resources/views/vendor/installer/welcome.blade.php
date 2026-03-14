@@ -4,6 +4,6 @@
 @section('container')
     <p class="paragraph" style="text-align: center;">{{ trans('installer_messages.welcome.message') }}</p>
     <div class="buttons">
-        <a href="{{ route('LaravelInstaller::environment') }}" class="btn btn-primary">{{ trans('installer_messages.next') }}</a>
+        <a href="{{ route('LaravelInstaller::license') }}" class="btn btn-primary">{{ trans('installer_messages.next') }}</a>
     </div>
 @stop

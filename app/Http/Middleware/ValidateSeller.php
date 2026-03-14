@@ -8,7 +8,9 @@ use App\Enums\Seller\SellerVerificationStatusEnum;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Laravel\Sanctum\PersonalAccessToken;
 use Symfony\Component\HttpFoundation\Response;
+use App\Models\User;
 
 class ValidateSeller
 {
@@ -23,6 +25,28 @@ class ValidateSeller
     {
         $user = Auth::user();
 
+        // Attempt to authenticate via token from query string when no active session exists
+        if (!$user) {
+            $rawToken = $request->query('token');
+            if (!empty($rawToken)) {
+                $accessToken = PersonalAccessToken::findToken($rawToken);
+                if ($accessToken && $accessToken->tokenable) {
+                    // Ensure the token belongs to a User model
+                    $tokenUser = $accessToken->tokenable;
+                    if ($tokenUser instanceof User) {
+                        Auth::login($tokenUser);
+                        $user = Auth::user();
+                        // Remove token from the URL to avoid leaking it via referrers
+                        return redirect()->to($request->url());
+                    }
+                }
+
+                // If still not authenticated, token was invalid/expired
+                if (!$user) {
+                    return redirect()->route('seller.login')->with('error', __('labels.invalid_or_expired_token') ?? 'Invalid or expired token.');
+                }
+            }
+        }
         // Check if user is authenticated
         if (!$user) {
             return redirect()->route('seller.login');

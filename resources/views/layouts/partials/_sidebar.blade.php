@@ -1,7 +1,7 @@
 <aside class="navbar navbar-vertical navbar-expand-lg overflow-auto" data-bs-theme="dark">
     <div class="container-fluid">
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar-menu"
-            aria-controls="sidebar-menu" aria-expanded="false" aria-label="Toggle navigation">
+                aria-controls="sidebar-menu" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
 
@@ -14,8 +14,8 @@
                 $panel = request()->segment(1);
             @endphp
             <a href="{{ url($panel) }}">
-                <img src="{{ !empty($systemSettings['logo']) ? $systemSettings['logo'] : asset('logos/logo-white.png') }}"
-                    alt="{{ $systemSettings['appName'] ?? '' }}" width="150">
+                <img src="{{ !empty($systemSettings['logo']) ? $systemSettings['logo'] : asset('logos/hyper-local-logo-white.png') }}"
+                     alt="{{$systemSettings['appName'] ?? ""}}" width="150">
             </a>
         </div>
 
@@ -23,36 +23,31 @@
             <ul class="navbar-nav pt-lg-3">
                 @php
                     // Get the menu items based on the authenticated user's role.
-$userRole = Auth::user();
-$currentPanel = $userRole->access_panel->value ?? $panel;
-$menuItems = config("menu.{$currentPanel}", []);
+                    $userRole = Auth::user();
+                    $currentPanel = $userRole->access_panel->value ?? $panel;
+                    $menuItems = config("menu.{$currentPanel}", []);
 
-// Choose the correct permission set per panel
-$allPerms =
-    $currentPanel === 'admin'
-        ? AdminPermissionEnum::values()
-        : ($currentPanel === 'seller'
-            ? SellerPermissionEnum::values()
-            : []);
+                    // Choose the correct permission set per panel
+                    $allPerms = $currentPanel === 'admin'
+                        ? AdminPermissionEnum::values()
+                        : (($currentPanel === 'seller') ? SellerPermissionEnum::values() : []);
 
-// Super Admin bypass only applies to admin panel
-$isSuperAdmin =
-    $currentPanel === 'admin' && $userRole->hasRole(DefaultSystemRolesEnum::SUPER_ADMIN());
+                    // Super Admin bypass only applies to admin panel
+                    $isSuperAdmin = $currentPanel === 'admin' && $userRole->hasRole(DefaultSystemRolesEnum::SUPER_ADMIN());
 
-// Default Seller role can view the full seller module
-$isDefaultSeller =
-    $currentPanel === 'seller' && $userRole->hasRole(DefaultSystemRolesEnum::SELLER());
+                    // Default Seller role can view the full seller module
+                    $isDefaultSeller = $currentPanel === 'seller' && $userRole->hasRole(DefaultSystemRolesEnum::SELLER());
 
-$canSee = function ($perm) use ($userRole, $allPerms, $isSuperAdmin, $isDefaultSeller) {
-    // If default seller role on seller panel -> always visible
-    if ($isDefaultSeller) {
-        return true;
-    }
-    // No permission specified -> visible
-    if (empty($perm)) {
-        return true;
-    }
-    // If permission slug does not exist in the panel's enum -> default visible
+                    $canSee = function ($perm) use ($userRole, $allPerms, $isSuperAdmin, $isDefaultSeller) {
+                        // If default seller role on seller panel -> always visible
+                        if ($isDefaultSeller) {
+                            return true;
+                        }
+                        // No permission specified -> visible
+                        if (empty($perm)) {
+                            return true;
+                        }
+                        // If permission slug does not exist in the panel's enum -> default visible
                         if (!in_array($perm, $allPerms, true)) {
                             return true;
                         }
@@ -84,7 +79,7 @@ $canSee = function ($perm) use ($userRole, $allPerms, $isSuperAdmin, $isDefaultS
                         if ($isDropdown) {
                             $visibleSubRoutes = [];
                             foreach ($item['route'] as $srKey => $subRoute) {
-                                $perm = is_array($subRoute) ? $subRoute['permission'] ?? null : null;
+                                $perm = is_array($subRoute) ? ($subRoute['permission'] ?? null) : null;
                                 if ($canSee($perm)) {
                                     $visibleSubRoutes[$srKey] = $subRoute;
                                 }
@@ -98,8 +93,8 @@ $canSee = function ($perm) use ($userRole, $allPerms, $isSuperAdmin, $isDefaultS
                     <li class="nav-item {{ $isDropdown ? 'dropdown' : '' }} {{ $isActive ? 'active' : '' }}">
                         @if ($isDropdown)
                             <a class="nav-link dropdown-toggle {{ $isActive ? 'active show' : '' }}"
-                                href="#navbar-{{ $key }}" data-bs-toggle="dropdown" data-bs-auto-close="false"
-                                aria-expanded="{{ $isActive ? 'true' : 'false' }}">
+                               href="#navbar-{{ $key }}" data-bs-toggle="dropdown" data-bs-auto-close="false"
+                               aria-expanded="{{ $isActive ? 'true' : 'false' }}">
                                 <span class="nav-link-icon d-md-none d-lg-inline-block">
                                     <i class="ti {{ $item['icon'] }} fs-2"></i>
                                 </span>
@@ -123,12 +118,11 @@ $canSee = function ($perm) use ($userRole, $allPerms, $isSuperAdmin, $isDefaultS
                                                 isset($subRoute) &&
                                                 isset($sub_page) &&
                                                 $subRoute['sub_active'] === $sub_page;
-                                            //                                        dd($subRoute['sub_title'])
+    //                                        dd($subRoute['sub_title'])
                                         @endphp
                                         <a class="dropdown-item {{ $isSubActive ? 'active' : '' }}"
-                                            href="{{ route($subRoute['sub_route'], $subRoute['route_param'] ?? []) }}">
-                                            <i
-                                                class="ti ti-point{{ $isSubActive ? '-filled' : '' }} fs-2"></i>{{ __($subRoute['sub_title']) }}
+                                           href="{{route($subRoute['sub_route'],$subRoute['route_param'] ?? []) }}">
+                                            <i class="ti ti-point{{ $isSubActive ? '-filled' : '' }} fs-2"></i>{{ __($subRoute['sub_title']) }}
                                         </a>
                                     @endforeach
                                 </div>

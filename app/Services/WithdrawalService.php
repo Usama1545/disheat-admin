@@ -52,17 +52,22 @@ class WithdrawalService
 
             $wallet = $walletResult['data'];
 
+            $availableBalance = $wallet->balance - $wallet->blocked_balance;
             // Check if the user has enough balance
-            if ($wallet->balance < $data['amount']) {
+            if ($availableBalance < $data['amount']) {
                 return [
                     'success' => false,
-                    'message' => __('labels.insufficient_wallet_balance'),
+                    'message' => __('labels.insufficient_wallet_balance') . ' (' . __('labels.available_balance') . ': ' . $availableBalance . ')',
                     'data' => []
                 ];
             }
 
             // Create the withdrawal request
             DB::beginTransaction();
+
+            Wallet::where('user_id', $userId)->update([
+                'blocked_balance' => $wallet->blocked_balance + $data['amount']
+            ]);
 
             $withdrawalRequest = DeliveryBoyWithdrawalRequest::create([
                 'user_id' => $userId,

@@ -4,12 +4,15 @@ namespace App\Models;
 
 use App\Enums\Order\OrderItemStatusEnum;
 use App\Enums\Product\ProductStatusEnum;
+use App\Enums\Product\ProductFilterEnum;
 use App\Enums\Product\ProductImageFitEnum;
 use App\Enums\Product\ProductVarificationStatusEnum;
 use App\Enums\SpatieMediaCollectionName;
 use App\Enums\Store\StoreVerificationStatusEnum;
 use App\Enums\Store\StoreVisibilityStatusEnum;
+use App\Enums\SettingTypeEnum;
 use App\Services\DeliveryZoneService;
+use App\Services\SettingService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -82,6 +85,50 @@ class Product extends Model implements HasMedia
         'base_prep_time' => 'integer',
     ];
 
+    /**
+     * Scope to eager-load category and its immediate parent to reduce queries
+     * when accessing the hierarchy key. Deeper ancestors are supported and
+     * will be resolved dynamically during traversal (no fixed depth limit).
+     */
+    public function scopeWithCategoryHierarchy(Builder $query): Builder
+    {
+        return $query->with(['category.parent']);
+    }
+
+    /**
+     * Accessor to get the category hierarchy key for a product, composed from
+     * the root category down to the product's category using category slugs.
+     * Example: "electronics/mobiles/android".
+     */
+    public function getCategoryHierarchyKeyAttribute(): ?array
+    {
+        // Ensure base relation is available; deeper ancestors are traversed
+        // dynamically to support unlimited parent levels.
+        if (!$this->relationLoaded('category')) {
+            $this->loadMissing('category');
+        }
+
+        $category = $this->category;
+        if (!$category) {
+            return null;
+        }
+
+        $result = [];
+        $current = &$result;
+
+        // Walk up the tree until there is no parent
+        while ($category) {
+            $current['id'] = $category->id;
+            if ($category->parent) {
+                $current['child'] = [];
+                $current = &$current['child'];
+            }
+            $category = $category->parent;
+        }
+
+        return $result;
+    }
+
     public function getEstimatedDeliveryTimeAttribute()
     {
         // If user coordinates or zone info are not available, return null
@@ -120,6 +167,62 @@ class Product extends Model implements HasMedia
         $estimatedTime = $basePrepTime + ($distance * $deliveryTimePerKm) + $bufferTime;
         // Round to the nearest minute
         return ceil($estimatedTime);
+    }
+
+    /**
+     * Scope: Apply product-specific filters such as featured, low_stock, out_of_stock.
+     * This reuses the same stock aggregation logic needed by multiple controllers.
+     */
+    public function scopeApplyProductFilter(Builder $query, ?string $filter): Builder
+    {
+        if (empty($filter) || !in_array($filter, ProductFilterEnum::values(), true)) {
+            return $query;
+        }
+
+        try {
+            // Stock based filters
+            if (in_array($filter, [ProductFilterEnum::LOW_STOCK(), ProductFilterEnum::OUT_OF_STOCK()], true)) {
+                $stockSub = DB::table('product_variants')
+                    ->join('store_product_variants', 'store_product_variants.product_variant_id', '=', 'product_variants.id')
+                    ->select('product_variants.product_id', DB::raw('COALESCE(SUM(store_product_variants.stock), 0) as total_stock'))
+                    ->groupBy('product_variants.product_id');
+
+                // Join aggregated stock to products and select base columns
+                $query->leftJoinSub($stockSub, 'product_stock_totals', function ($join) {
+                    $join->on('product_stock_totals.product_id', '=', 'products.id');
+                })
+                    ->select('products.*', DB::raw('COALESCE(product_stock_totals.total_stock, 0) as total_stock'));
+
+                if ($filter === ProductFilterEnum::OUT_OF_STOCK()) {
+                    $query->whereRaw('COALESCE(product_stock_totals.total_stock, 0) <= 0');
+                } elseif ($filter === ProductFilterEnum::LOW_STOCK()) {
+                    // Retrieve lowStockLimit from system settings
+                    $lowStockLimit = 0;
+                    try {
+                        $settingService = app(SettingService::class);
+                        $systemSettingsResource = $settingService->getSettingByVariable(SettingTypeEnum::SYSTEM());
+                        $systemSettings = $systemSettingsResource?->toArray(request())['value'] ?? [];
+                        $lowStockLimit = (int)($systemSettings['lowStockLimit'] ?? 0);
+                    } catch (\Throwable $e) {
+                        $lowStockLimit = 0;
+                    }
+
+                    if ($lowStockLimit > 0) {
+                        $query->whereRaw('COALESCE(product_stock_totals.total_stock, 0) > 0')
+                            ->whereRaw('COALESCE(product_stock_totals.total_stock, 0) <= ?', [$lowStockLimit]);
+                    } else {
+                        // Guardrail: if not configured, return none for low stock
+                        $query->whereRaw('1 = 0');
+                    }
+                }
+            } elseif ($filter === ProductFilterEnum::FEATURED()) {
+                $query->where('featured', '1');
+            }
+        } catch (\Throwable $e) {
+            // Ignore filter errors to avoid breaking listing endpoints
+        }
+
+        return $query;
     }
 
     public function getFavoriteAttribute(): ?array
@@ -164,7 +267,7 @@ class Product extends Model implements HasMedia
     public
     function getMainImageAttribute(): ?string
     {
-        return $this->getFirstMediaUrl(SpatieMediaCollectionName::PRODUCT_MAIN_IMAGE());
+        return (!empty($this->getFirstMediaUrl(SpatieMediaCollectionName::PRODUCT_MAIN_IMAGE())) ? $this->getFirstMediaUrl(SpatieMediaCollectionName::PRODUCT_MAIN_IMAGE()) : asset('assets/images/product-placeholder.jpg'));
     }
 
     public function orderItems(): HasMany
@@ -274,6 +377,12 @@ class Product extends Model implements HasMedia
     function variantAttributes(): HasMany
     {
         return $this->hasMany(ProductVariantAttribute::class);
+    }
+
+    public
+    function customProductSections(): HasMany
+    {
+        return $this->hasMany(CustomProductSection::class)->orderBy('sort_order');
     }
 
     /**
@@ -459,6 +568,18 @@ class Product extends Model implements HasMedia
             $brandIds = Brand::whereIn('slug', $filter['brands'])->pluck('id')->toArray();
             $query->whereIn('brand_id', $brandIds);
         }
+        // Filter by global attribute value IDs if provided
+        if (!empty($filter['attribute_values'])) {
+            $attrValueIds = is_array($filter['attribute_values'])
+                ? array_values(array_filter(array_map('intval', $filter['attribute_values'])))
+                : [(int)$filter['attribute_values']];
+
+            if (!empty($attrValueIds)) {
+                $query->whereHas('variantAttributes', function ($q) use ($attrValueIds) {
+                    $q->whereIn('global_attribute_value_id', $attrValueIds);
+                });
+            }
+        }
         if (!empty($filter['exclude_product'])) {
             // Support excluding a single slug or multiple slugs
             $exclude = $filter['exclude_product'];
@@ -535,7 +656,40 @@ class Product extends Model implements HasMedia
     {
         // Get zones at the given coordinates
         $zoneInfo = DeliveryZoneService::getZonesAtPoint($latitude, $longitude);
-        $products = self::scopeByLocation(zoneInfo: $zoneInfo, query: self::query(), filter: $filter)
+
+        // Build a base query that excludes category/brand slug filters
+        // so we can compute unique IDs from the unfiltered result set.
+        $baseFilter = $filter;
+        unset($baseFilter['categories'], $baseFilter['brands']);
+
+        $baseQuery = self::scopeByLocation(zoneInfo: $zoneInfo, query: self::query(), filter: $baseFilter);
+
+        // Collect unique category and brand IDs, limit to 50
+        $categoryIds = (clone $baseQuery)
+            ->distinct()
+            ->pluck('category_id')
+            ->filter()
+            ->unique()
+            ->take(50)
+            ->values()
+            ->toArray();
+
+        $filteredQuery = self::scopeByLocation(
+            zoneInfo: $zoneInfo,
+            query: self::query(),
+            filter: $filter
+        );
+
+        $brandIds = (clone $filteredQuery)
+            ->distinct()
+            ->pluck('brand_id')
+            ->filter()
+            ->unique()
+            ->take(50)
+            ->values()
+            ->toArray();
+
+        $products = $filteredQuery
             ->orderBy('title')
             ->paginate($perPage);
 
@@ -582,7 +736,10 @@ class Product extends Model implements HasMedia
                 ->values()
                 ->toArray();
         }
+        // Attach supplemental data to paginator
         $products->related_keywords = $relatedKeywords;
+        $products->category_ids = $categoryIds;
+        $products->brand_ids = $brandIds;
         return $products;
     }
 
@@ -592,7 +749,15 @@ class Product extends Model implements HasMedia
         $zoneInfo = DeliveryZoneService::getZonesAtPoint($latitude, $longitude);
         // In Laravel, when you define a method with the prefix 'scope' (like scopeByLocation),
         // you can call it without the prefix (as just byLocation)
-        $product = self::scopeByLocation(zoneInfo: $zoneInfo, query: self::query())->where('id', $id)
+        $product = self::scopeByLocation(zoneInfo: $zoneInfo, query: self::query()->with([
+                'variants.storeProductVariants',
+                'variants.attributes.attribute',
+                'variants.attributes.attributeValue',
+                'variantAttributes.attribute',
+                'variantAttributes.attributeValue',
+                'customProductSections.fields',
+            ]))
+            ->where('id', $id)
             ->where('verification_status', ProductVarificationStatusEnum::APPROVED())
             ->get()->first();
         if (!empty($product)) {

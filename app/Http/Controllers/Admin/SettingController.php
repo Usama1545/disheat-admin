@@ -11,6 +11,7 @@ use App\Types\Settings\AppSettingType;
 use App\Types\Settings\AuthenticationSettingType;
 use App\Types\Settings\HomeGeneralSettingType;
 use App\Types\Settings\DeliveryBoySettingType;
+use App\Types\Settings\SellerSettingType;
 use App\Types\Settings\EmailSettingType;
 use App\Types\Settings\NotificationSettingType;
 use App\Types\Settings\PaymentSettingType;
@@ -68,6 +69,7 @@ class SettingController extends Controller
                 SettingTypeEnum::WEB() => WebSettingType::class,
                 SettingTypeEnum::APP() => AppSettingType::class,
                 SettingTypeEnum::DELIVERY_BOY() => DeliveryBoySettingType::class,
+                SettingTypeEnum::SELLER() => SellerSettingType::class,
                 SettingTypeEnum::HOME_GENERAL_SETTINGS() => HomeGeneralSettingType::class,
                 default => null,
             };

@@ -242,6 +242,9 @@ class FeaturedSectionApiController extends Controller
     #[QueryParameter('latitude', description: 'User latitude for location-based filtering.', type: 'float', example: '37.7749')]
     #[QueryParameter('longitude', description: 'User longitude for location-based filtering.', type: 'float', example: '-122.4194')]
     #[QueryParameter('sort', description: 'Enter sort filter', type: 'string', example: 'price_asc, price_desc, relevance, avg_rated, best_seller, featured',)]
+    #[QueryParameter('categories', description: 'Comma-separated list of category slugs to filter products', type: 'string', example: 'apple,samsung')]
+    #[QueryParameter('brands', description: 'Comma-separated list of brand slugs to filter products', type: 'string', example: 'mobile,electronics')]
+    #[QueryParameter('attribute_values', description: 'Comma-separated list of global attribute value IDs to filter products', type: 'string', example: '12,34,56')]
     public function products(Request $request, string $slug): JsonResponse
     {
         try {
@@ -251,12 +254,28 @@ class FeaturedSectionApiController extends Controller
                 'sort' => 'string|nullable',
                 'latitude' => 'sometimes|required_with:longitude|numeric|between:-90,90',
                 'longitude' => 'sometimes|required_with:latitude|numeric|between:-180,180',
+                'categories' => 'sometimes|string|nullable',
+                'brands' => 'sometimes|string|nullable',
+                'attribute_values' => 'sometimes|string|nullable',
             ]);
 
             $perPage = $request->input('per_page', 15);
             $latitude = $request->input('latitude');
             $longitude = $request->input('longitude');
             $sort = $request->input('sort');
+            $categories = (!empty($request->input('categories')) && is_string($request->input('categories'))) ? explode(',', $request->input('categories')) : null;
+            $brands = (!empty($request->input('brands')) && is_string($request->input('brands'))) ? explode(',', $request->input('brands')) : null;
+            // Parse attribute value IDs CSV into integer array
+            $attributeValues = null;
+            if (!empty($request->input('attribute_values')) && is_string($request->input('attribute_values'))) {
+                $attributeValues = array_values(array_unique(array_filter(array_map(function ($v) {
+                    $n = (int)trim($v);
+                    return $n > 0 ? $n : null;
+                }, explode(',', $request->input('attribute_values'))))));
+                if (empty($attributeValues)) {
+                    $attributeValues = null;
+                }
+            }
 
             $featuredSection = FeaturedSection::active()
                 ->where('slug', $slug)
@@ -315,6 +334,31 @@ class FeaturedSectionApiController extends Controller
                 // Apply additional filters
                 $productsQuery->where('status', ActiveInactiveStatusEnum::ACTIVE());
 
+                // Apply attribute value filter (global attribute value IDs) before collecting IDs
+                if (!empty($attributeValues)) {
+                    $productsQuery->whereHas('variantAttributes', function ($q) use ($attributeValues) {
+                        $q->whereIn('global_attribute_value_id', $attributeValues);
+                    });
+                }
+
+                // Collect unique category and brand IDs BEFORE applying category/brand slug filters
+                $categoryIds = (clone $productsQuery)->distinct()->pluck('category_id')->filter()->unique()->values()->toArray();
+
+                // Apply category filters if provided (by slug)
+                if (!empty($categories)) {
+                    $productsQuery->whereHas('category', function ($q) use ($categories) {
+                        $q->whereIn('slug', $categories);
+                    });
+                }
+
+                // Apply brand filters if provided (by slug)
+                if (!empty($brands)) {
+                    $productsQuery->whereHas('brand', function ($q) use ($brands) {
+                        $q->whereIn('slug', $brands);
+                    });
+                }
+                $brandIds = (clone $productsQuery)->distinct()->pluck('brand_id')->filter()->unique()->values()->toArray();
+
                 // Paginate products
                 $products = $productsQuery->paginate($perPage);
 
@@ -331,6 +375,31 @@ class FeaturedSectionApiController extends Controller
                 // Apply additional filters
                 $productsQuery->where('status', ActiveInactiveStatusEnum::ACTIVE());
 
+                // Apply attribute value filter (global attribute value IDs) before collecting IDs
+                if (!empty($attributeValues)) {
+                    $productsQuery->whereHas('variantAttributes', function ($q) use ($attributeValues) {
+                        $q->whereIn('global_attribute_value_id', $attributeValues);
+                    });
+                }
+
+                // Collect unique category and brand IDs BEFORE applying category/brand slug filters
+                $categoryIds = (clone $productsQuery)->distinct()->pluck('category_id')->filter()->unique()->values()->toArray();
+                $brandIds = (clone $productsQuery)->distinct()->pluck('brand_id')->filter()->unique()->values()->toArray();
+
+                // Apply category filters if provided (by slug)
+                if (!empty($categories)) {
+                    $productsQuery->whereHas('category', function ($q) use ($categories) {
+                        $q->whereIn('slug', $categories);
+                    });
+                }
+
+                // Apply brand filters if provided (by slug)
+                if (!empty($brands)) {
+                    $productsQuery->whereHas('brand', function ($q) use ($brands) {
+                        $q->whereIn('slug', $brands);
+                    });
+                }
+
                 // Paginate products
                 $products = $productsQuery->paginate($perPage);
             }
@@ -343,7 +412,15 @@ class FeaturedSectionApiController extends Controller
             return ApiResponseType::sendJsonResponse(
                 success: true,
                 message: 'labels.featured_section_products_fetched_successfully',
-                data: $products
+                data: [
+                    'current_page' => $products->currentPage(),
+                    'last_page' => $products->lastPage(),
+                    'per_page' => $products->perPage(),
+                    'total' => $products->total(),
+                    'category_ids' => $categoryIds,
+                    'brand_ids' => $brandIds,
+                    'data' => $products->items(),
+                ]
             );
 
         } catch (\Illuminate\Validation\ValidationException $e) {

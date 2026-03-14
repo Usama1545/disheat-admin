@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\Seller\SellerVerificationStatusEnum;
+use App\Enums\Seller\SellerVisibilityStatusEnum;
 use App\Enums\SpatieMediaCollectionName;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -65,6 +67,15 @@ class Seller extends Model implements HasMedia
             'longitude' => 'decimal:8',
             'metadata' => 'array',
         ];
+    }
+
+    public function getVerificationStatusAttribute($value){
+        return !empty($value) ? $value : SellerVerificationStatusEnum::NotApproved();
+    }
+
+    public function getVisibilityStatusAttribute($value)
+    {
+        return !empty($value) ? $value : SellerVisibilityStatusEnum::Draft();
     }
 
     public function user(): BelongsTo

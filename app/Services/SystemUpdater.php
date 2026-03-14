@@ -190,8 +190,11 @@ class SystemUpdater
 
         $log("Running artisan: {$command}");
 
+        // Find the correct PHP CLI binary
+        $phpBinary = $this->getPhpCliBinary();
+
         $process = new Process([
-            PHP_BINARY,
+            $phpBinary,
             base_path('artisan'),
             ...explode(' ', $command),
         ]);
@@ -200,12 +203,56 @@ class SystemUpdater
         $process->run();
 
         if (!$process->isSuccessful()) {
-            throw new \RuntimeException($process->getErrorOutput());
+            $error = $process->getErrorOutput();
+            $output = $process->getOutput();
+
+            $fullError = trim($error ?: $output);
+
+            if (empty($fullError)) {
+                $fullError = "Command failed with exit code: " . $process->getExitCode();
+            }
+
+            $log("ERROR: {$fullError}");
+            throw new \RuntimeException($fullError);
+        }
+
+        $output = $process->getOutput();
+        if ($output) {
+            $log($output);
         }
 
         $log("Completed artisan: {$command}");
     }
 
+    /**
+     * Get the correct PHP CLI binary path
+     */
+    protected function getPhpCliBinary(): string
+    {
+        // If PHP_BINARY points to php-fpm, find the CLI version
+        if (str_contains(PHP_BINARY, 'php-fpm')) {
+            // Extract version (e.g., "8.3" from "php-fpm8.3")
+            preg_match('/php-fpm(\d+\.\d+)/', PHP_BINARY, $matches);
+            $version = $matches[1] ?? '';
+
+            // Try common CLI paths
+            $possiblePaths = [
+                "/usr/bin/php{$version}",
+                "/usr/bin/php",
+                "/usr/local/bin/php{$version}",
+                "/usr/local/bin/php",
+            ];
+
+            foreach ($possiblePaths as $path) {
+                if (file_exists($path) && is_executable($path)) {
+                    return $path;
+                }
+            }
+        }
+
+        // If PHP_BINARY is already CLI or as fallback
+        return PHP_BINARY;
+    }
     protected function applyAction(array $action, string $tempDir, string $backupDir, string $root, callable $log): void
     {
         $type   = $action['type'];
@@ -217,13 +264,13 @@ class SystemUpdater
             throw new \RuntimeException('Invalid target path in update.json');
         }
         $firstSegment = explode('/', $relativeTarget)[0];
-        $allowedRoots = ['app', 'routes', 'config', 'resources', 'public', 'database', 'packages'];
+        $allowedRoots = ['app', 'routes', 'config', 'resources', 'public', 'database', 'packages', 'bootstrap'];
         if (!in_array($firstSegment, $allowedRoots, true)) {
             throw new \RuntimeException("Target '{$relativeTarget}' is outside allowed roots.");
         }
         if ($type === 'delete') {
             $protectedFiles = ['.env'];
-            $protectedRoots = ['vendor', 'storage', 'bootstrap'];
+            $protectedRoots = ['vendor', 'storage'];
             if (in_array($relativeTarget, $protectedFiles, true) || in_array($firstSegment, $protectedRoots, true)) {
                 throw new \RuntimeException("Deletion of '{$relativeTarget}' is not allowed.");
             }

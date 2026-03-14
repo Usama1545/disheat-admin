@@ -24,7 +24,7 @@ class ProductPolicy
                 return true;
             }
             // Only sellers can view products
-            if ($user->seller() === null) {
+            if ($user->seller() == null) {
                 $this->hasPermission(AdminPermissionEnum::PRODUCT_VIEW());
             }
 
@@ -41,12 +41,12 @@ class ProductPolicy
     {
         try {
             // Only the seller who owns the product can update it
-            if ($user->seller() === null) {
+            if ($user->seller() == null) {
                 return $this->hasPermission(AdminPermissionEnum::PRODUCT_VIEW());
             }
 
             // Check if the user is the owner
-            if ($user->seller()->id === $product->seller_id) {
+            if ($user->seller()->id == $product->seller_id) {
                 // Check role or permission
                 if (
                     $user->hasRole(DefaultSystemRolesEnum::SELLER()) ||
@@ -68,7 +68,7 @@ class ProductPolicy
     {
         try {
             // Only sellers with a valid seller record can create product FAQs
-            if ($user->seller() === null) {
+            if ($user->seller() == null) {
                 return false;
             }
 
@@ -93,12 +93,12 @@ class ProductPolicy
     {
         try {
             // Only the seller who owns the product can update it
-            if ($user->seller() === null) {
+            if ($user->seller() == null) {
                 return false;
             }
 
             // Check if the user is the owner
-            if ($user->seller()->id === $product->seller_id) {
+            if ($user->seller()->id == $product->seller_id) {
                 // Check role or permission
                 if (
                     $user->hasRole(DefaultSystemRolesEnum::SELLER()) ||
@@ -122,12 +122,12 @@ class ProductPolicy
     {
         try {
             // Only the seller who owns the product can update it
-            if ($user->seller() === null) {
+            if ($user->seller() == null) {
                 return false;
             }
 
             // Check if the user is the owner
-            if ($user->seller()->id === $product->seller_id) {
+            if ($user->seller()->id == $product->seller_id) {
                 // Check role or permission
                 if (
                     $user->hasRole(DefaultSystemRolesEnum::SELLER()) ||

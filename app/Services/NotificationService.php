@@ -5,37 +5,50 @@ namespace App\Services;
 use App\Enums\NotificationTypeEnum;
 use App\Models\Notification;
 use App\Models\User;
-use App\Models\Store;
-use App\Models\Order;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
 class NotificationService
 {
     /**
-     * Create a new notification
+     * Create a new notification.
      *
-     * @param array $data
-     * @return Notification
-     * @throws Exception
+     * All relational meta (user_id, store_id, order_id, sent_to, title,
+     * message, metadata) is stored inside the `data` JSON column.
+     * The morph columns `notifiable_type` / `notifiable_id` are set when
+     * a user_id is provided — matching Laravel's standard Database channel.
      */
     public function createNotification(array $data): Notification
     {
         try {
             DB::beginTransaction();
 
-            $notification = Notification::create([
-                'user_id' => $data['user_id'] ?? null,
+            $userId = $data['user_id'] ?? null;
+            $type   = $data['type'] ?? NotificationTypeEnum::GENERAL;
+
+            $payload = [
+                'title'    => $data['title']    ?? null,
+                'message'  => $data['message']  ?? null,
+                'metadata' => $data['metadata'] ?? null,
+                'sent_to'  => $data['sent_to']  ?? 'admin',
                 'store_id' => $data['store_id'] ?? null,
                 'order_id' => $data['order_id'] ?? null,
-                'type' => $data['type'] ?? NotificationTypeEnum::GENERAL,
-                'sent_to' => $data['sent_to'] ?? 'admin',
-                'title' => $data['title'],
-                'message' => $data['message'],
-                'is_read' => $data['is_read'] ?? false,
-                'metadata' => $data['metadata'] ?? null,
-            ]);
+                // Keep user_id in data for legacy read queries, but the
+                // authoritative owner reference is the morph columns below.
+                'user_id'  => $userId,
+            ];
+
+            $attributes = [
+                'type'           => $type instanceof NotificationTypeEnum ? $type->value : (string) $type,
+                'data'           => $payload,
+                'notifiable_type' => User::class,
+                // Fall back to a sentinel value of 0 when there is no specific
+                // user (e.g. admin-wide or seller-wide notifications).
+                'notifiable_id'  => $userId ?? 0,
+            ];
+
+            /** @var Notification $notification */
+            $notification = Notification::query()->create($attributes);
 
             DB::commit();
 
@@ -48,100 +61,83 @@ class NotificationService
     }
 
     /**
-     * Get notifications for a specific user
+     * Get paginated notifications for a specific user.
      *
-     * @param int $userId
-     * @param int $perPage
-     * @return array
+     * Uses only the standard morph columns — no dual OR on `data->user_id`.
      */
     public function getUserNotifications(int $userId, int $perPage = 15): array
     {
-        $notifications = Notification::where('user_id', $userId)
-            ->with(['user', 'store', 'order'])
-            ->orderBy('created_at', 'desc')
+        $notifications = Notification::where('notifiable_type', User::class)
+            ->where('notifiable_id', $userId)
+            ->with('notifiable')
+            ->orderByDesc('created_at')
             ->paginate($perPage);
 
         return [
             'notifications' => $notifications->items(),
-            'pagination' => [
+            'pagination'    => [
                 'current_page' => $notifications->currentPage(),
-                'last_page' => $notifications->lastPage(),
-                'per_page' => $notifications->perPage(),
-                'total' => $notifications->total(),
-            ]
+                'last_page'    => $notifications->lastPage(),
+                'per_page'     => $notifications->perPage(),
+                'total'        => $notifications->total(),
+            ],
         ];
     }
 
     /**
-     * Get notifications by sent_to type
-     *
-     * @param string $sentTo
-     * @param int $perPage
-     * @return array
+     * Get paginated notifications filtered by `sent_to` value (admin / seller / customer).
      */
     public function getNotificationsBySentTo(string $sentTo, int $perPage = 15): array
     {
         $notifications = Notification::sentTo($sentTo)
-            ->with(['user', 'store', 'order'])
-            ->orderBy('created_at', 'desc')
+            ->with('notifiable')
+            ->orderByDesc('created_at')
             ->paginate($perPage);
 
         return [
             'notifications' => $notifications->items(),
-            'pagination' => [
+            'pagination'    => [
                 'current_page' => $notifications->currentPage(),
-                'last_page' => $notifications->lastPage(),
-                'per_page' => $notifications->perPage(),
-                'total' => $notifications->total(),
-            ]
+                'last_page'    => $notifications->lastPage(),
+                'per_page'     => $notifications->perPage(),
+                'total'        => $notifications->total(),
+            ],
         ];
     }
 
     /**
-     * Get unread notifications count for a user
-     *
-     * @param int $userId
-     * @return int
+     * Get unread notifications count for a user.
      */
     public function getUnreadCount(int $userId): int
     {
-        return Notification::where('user_id', $userId)
-            ->unread()
+        return Notification::where('notifiable_type', User::class)
+            ->where('notifiable_id', $userId)
+            ->whereNull('read_at')
             ->count();
     }
 
     /**
-     * Mark notification as read
-     *
-     * @param int $notificationId
-     * @return bool
-     * @throws Exception
+     * Mark a single notification as read.
      */
-    public function markAsRead(int $notificationId): bool
+    public function markAsRead(string|int $notificationId): bool
     {
-        try {
-            $notification = Notification::findOrFail($notificationId);
-            return $notification->markAsRead();
-        } catch (Exception $e) {
-            throw $e;
-        }
+        $notification = Notification::findOrFail($notificationId);
+
+        return $notification->markAsRead();
     }
 
     /**
-     * Mark all notifications as read for a user
-     *
-     * @param int $userId
-     * @return bool
-     * @throws Exception
+     * Mark all notifications as read for a specific user (seller panel).
      */
     public function markAllAsRead(int $userId): bool
     {
         try {
             DB::beginTransaction();
 
-            Notification::where('user_id', $userId)
-                ->unread()
-                ->update(['is_read' => true]);
+            Notification::where('notifiable_type', User::class)
+                ->where('notifiable_id', $userId)
+                ->whereNull('read_at')
+                ->update(['read_at' => now()]);
 
             DB::commit();
 
@@ -153,14 +149,17 @@ class NotificationService
         }
     }
 
+    /**
+     * Mark all admin-targeted notifications as read (admin panel).
+     */
     public function markAllAsReadAdmin(): bool
     {
         try {
             DB::beginTransaction();
 
-            Notification::where('sent_to', 'admin')
-                ->unread()
-                ->update(['is_read' => true]);
+            Notification::sentTo('admin')
+                ->whereNull('read_at')
+                ->update(['read_at' => now()]);
 
             DB::commit();
 
@@ -173,56 +172,46 @@ class NotificationService
     }
 
     /**
-     * Delete a notification
-     *
-     * @param int $notificationId
-     * @return bool
-     * @throws Exception
+     * Delete a notification.
      */
-    public function deleteNotification(int $notificationId): bool
+    public function deleteNotification(string|int $notificationId): bool
     {
-        try {
-            $notification = Notification::findOrFail($notificationId);
-            return $notification->delete();
-        } catch (Exception $e) {
-            throw $e;
-        }
+        $notification = Notification::findOrFail($notificationId);
+
+        return (bool) $notification->delete();
     }
 
     /**
-     * Get notifications by type
-     *
-     * @param NotificationTypeEnum $type
-     * @param int $perPage
-     * @return array
+     * Get paginated notifications filtered by type.
      */
     public function getNotificationsByType(NotificationTypeEnum $type, int $perPage = 15): array
     {
         $notifications = Notification::ofType($type)
-            ->with(['user', 'store', 'order'])
-            ->orderBy('created_at', 'desc')
+            ->with('notifiable')
+            ->orderByDesc('created_at')
             ->paginate($perPage);
 
         return [
             'notifications' => $notifications->items(),
-            'pagination' => [
+            'pagination'    => [
                 'current_page' => $notifications->currentPage(),
-                'last_page' => $notifications->lastPage(),
-                'per_page' => $notifications->perPage(),
-                'total' => $notifications->total(),
-            ]
+                'last_page'    => $notifications->lastPage(),
+                'per_page'     => $notifications->perPage(),
+                'total'        => $notifications->total(),
+            ],
         ];
     }
 
     /**
-     * Send notification to multiple users
+     * Send the same notification to multiple users.
      *
-     * @param array $userIds
-     * @param array $notificationData
-     * @return Collection
-     * @throws Exception
+     * Each notification is created individually so every record gets its own
+     * `notifiable_id`, keeping ownership unambiguous.
+     *
+     * @param  int[]  $userIds
+     * @return \Illuminate\Support\Collection<int, Notification>
      */
-    public function sendBulkNotifications(array $userIds, array $notificationData): Collection
+    public function sendBulkNotifications(array $userIds, array $notificationData): \Illuminate\Support\Collection
     {
         try {
             DB::beginTransaction();
@@ -230,8 +219,9 @@ class NotificationService
             $notifications = collect();
 
             foreach ($userIds as $userId) {
-                $data = array_merge($notificationData, ['user_id' => $userId]);
-                $notification = $this->createNotification($data);
+                $notification = $this->createNotification(
+                    array_merge($notificationData, ['user_id' => $userId])
+                );
                 $notifications->push($notification);
             }
 

@@ -2,6 +2,7 @@ let map;
 let marker;
 let infoWindow;
 let geocoder;
+let zonePolygons = [];
 
 async function initMap() {
     // Import libraries
@@ -86,6 +87,13 @@ async function initMap() {
     // If there are existing coordinates, show the marker
     if (existingLat && existingLng) {
         marker.position = center;
+    }
+
+    // Draw all delivery zones on the map so seller can see service availability
+    try {
+        await renderDeliveryZonesOnMap();
+    } catch (e) {
+        console.warn('Unable to render delivery zones on map:', e);
     }
 
     // Add click listener to map for location selection
@@ -200,6 +208,56 @@ async function handleLocationSelection(location, place = null) {
     infoWindow.setContent(content);
     infoWindow.setPosition(location);
     infoWindow.open({map, anchor: marker, shouldFocus: false});
+}
+
+// Fetch active delivery zones from API and draw their polygons on the seller map
+async function renderDeliveryZonesOnMap() {
+    // Clear existing polygons if any
+    if (zonePolygons.length) {
+        zonePolygons.forEach(p => p.setMap(null));
+        zonePolygons = [];
+    }
+
+    const response = await fetch('/api/delivery-zone?per_page=500', {headers: {'Accept': 'application/json'}});
+    if (!response.ok) throw new Error('Failed to load delivery zones');
+    const json = await response.json();
+
+    // Some APIs wrap data inside data.data per existing controller
+    const items = (json && json.data && Array.isArray(json.data.data)) ? json.data.data : (Array.isArray(json.data) ? json.data : []);
+
+    if (!items.length) return;
+
+    const iw = infoWindow || new google.maps.InfoWindow();
+
+    items.forEach(zone => {
+        if (!zone.boundary_json || !Array.isArray(zone.boundary_json) || zone.boundary_json.length < 3) return;
+        const path = zone.boundary_json.map(pt => ({lat: parseFloat(pt.lat), lng: parseFloat(pt.lng)})).filter(p => !Number.isNaN(p.lat) && !Number.isNaN(p.lng));
+        if (path.length < 3) return;
+
+        const polygon = new google.maps.Polygon({
+            paths: path,
+            strokeColor: '#0066ff',
+            strokeOpacity: 0.8,
+            strokeWeight: 2,
+            fillColor: '#1a73e8',
+            fillOpacity: 0.08,
+            // Important: keep polygons non-interactive so map clicks work everywhere
+            // Clicking inside a polygon previously intercepted the event and
+            // prevented selecting a location. Setting clickable to false lets
+            // the underlying map receive the click to place/move the marker.
+            clickable: false,
+            map: map,
+        });
+
+        polygon.addListener('click', (e) => {
+            const content = `<div><strong>${zone.name || 'Service Zone'}</strong></div>`;
+            iw.setContent(content);
+            iw.setPosition(e.latLng);
+            iw.open({map});
+        });
+
+        zonePolygons.push(polygon);
+    });
 }
 
 document.addEventListener('DOMContentLoaded', function () {

@@ -6,13 +6,13 @@
      use Illuminate\Support\Facades\Auth;
  @endphp
 <div class="page-header d-print-none mt-0">
-    <div class="container-xl navbar align-items-end justify-content-end py-2">
+    <div class="container-xl navbar align-items-end justify-content-end py-2 px-2">
         <div class="">
             <!-- Page title actions -->
             <div class="col-auto ms-auto d-print-none">
                 <div class="btn-list">
                     <!-- Theme switcher -->
-                    <div class="nav-item dropdown d-none d-md-flex me-3">
+                    <div class="nav-item dropdown d-flex me-3">
                         <a href="#" onclick="toggleTheme()" class="nav-link px-0" tabindex="-1" aria-label="Switch theme">
                             <i id="theme-icon" class="ti ti-moon fs-2"></i>
                         </a>
@@ -49,7 +49,7 @@
 {{--                    @endif--}}
 
                     <!-- Language dropdown -->
-                    <div class="nav-item dropdown d-none d-md-flex me-3">
+                    <div class="nav-item dropdown d-flex me-3">
                         <a href="#" class="nav-link px-0" data-bs-toggle="dropdown" tabindex="-1"
                            aria-label="Select language">
                             <i class="ti ti-language fs-2"></i>
@@ -110,17 +110,17 @@
                             $sentTo = $currentPanel === 'admin' ? 'admin' : 'seller';
 
                             // Fetch latest notifications for current panel
-                            $notifications = Notification::where('sent_to', $sentTo)
+                            $notifications = Notification::where('data->sent_to', $sentTo)
                                 ->orderBy('created_at', 'desc')
                                 ->limit(5)
                                 ->get();
 
                             // Get unread count
-                            $unreadCount = Notification::where('sent_to', $sentTo)
-                                ->where('is_read', false)
+                            $unreadCount = Notification::where('data->sent_to', $sentTo)
+                                ->whereNull('read_at')
                                 ->count();
                         @endphp
-                        <div class="nav-item dropdown d-none d-md-flex me-3">
+                        <div class="nav-item dropdown me-3">
                             <button type="button" class="btn btn-icon border-0 shadow-none nav-link px-0"
                                     data-bs-toggle="dropdown" tabindex="-1" aria-label="Show notifications">
                                 <i class="ti ti-bell fs-2"></i>
@@ -174,7 +174,7 @@
                     @endif
 
                     <!-- Admin profile dropdown -->
-                    <div class="nav-item dropdown">
+                    <div class="nav-item dropdown d-flex">
                         <a href="#" class="nav-link d-flex lh-1 text-reset p-0" data-bs-toggle="dropdown"
                            aria-label="Open user menu">
                             @if($user->profile_image)

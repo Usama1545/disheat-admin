@@ -25,8 +25,8 @@ class ProductApiController extends Controller
      */
     #[QueryParameter('page', description: 'Page number for pagination.', type: 'int', default: 1, example: 1)]
     #[QueryParameter('per_page', description: 'Products Per Page', type: 'int', default: 15, example: 15)]
-    #[QueryParameter('latitude', description: 'Latitude of the user location', required: true, type: 'float', example: 23.11684540)]
-    #[QueryParameter('longitude', description: 'Longitude of the user location', required: true, type: 'float', example: 70.02805670)]
+    #[QueryParameter('latitude', description: 'Latitude of the user location', required: true, type: 'float', example: 23.2420)]
+    #[QueryParameter('longitude', description: 'Longitude of the user location', required: true, type: 'float', example: 69.6669)]
     #[QueryParameter('categories', description: 'Comma-separated list of category slugs to filter products', type: 'string', example: 'apple,samsung')]
     #[QueryParameter('brands', description: 'Comma-separated list of brand slugs to filter products', type: 'string', example: 'mobile,electronics')]
     #[QueryParameter('exclude_product', description: 'Comma-separated list of product slugs to exclude from response', type: 'string', example: 'iphone-14,iphone-14-pro')]
@@ -34,85 +34,56 @@ class ProductApiController extends Controller
     #[QueryParameter('store', description: 'Enter Store Slug to filter products', type: 'string', example: 'my-store')]
     #[QueryParameter('search', description: 'Search term to filter products by name, description, category name, or tags', type: 'string', example: 'smartphone')]
     #[QueryParameter('include_child_categories', description: 'Include products from child categories when filtering by categories', type: 'boolean', default: false, example: true)]
+    #[QueryParameter('attribute_values', description: 'Comma-separated list of global attribute value IDs to filter products', type: 'string', example: '12,34,56')]
     public function index(GetProductsByLocationRequest $request): JsonResponse
     {
         try {
             $validated = $request->validated();
-            $filter = [];
-            if ($validated['categories'] ?? null) {
-                $filter['categories'] = is_string($validated['categories']) ? explode(',', $validated['categories']) : null;
-            }
-            if ($validated['brands'] ?? null) {
-                $filter['brands'] = is_string($validated['brands']) ? explode(',', $validated['brands']) : null;
-            }
-            if ($validated['exclude_product'] ?? null) {
-                // Normalize exclude_product into an array of unique slugs
-                $excludeSlugs = is_string($validated['exclude_product'])
-                    ? array_values(array_filter(array_map('trim', explode(',', $validated['exclude_product']))))
-                    : [];
 
-                if (!empty($excludeSlugs)) {
-                    $filter['exclude_product'] = $excludeSlugs;
+            $filter = $this->buildFilters($validated);
 
-                    // If categories are not provided, infer them from the excluded products' categories
-                    if (empty($filter['categories'])) {
-                        $categoryIds = Product::query()
-                            ->whereIn('slug', $excludeSlugs)
-                            ->pluck('category_id')
-                            ->filter()
-                            ->unique()
-                            ->values()
-                            ->toArray();
+            $products = Product::getProductsByLocation(
+                latitude: $validated['latitude'],
+                longitude: $validated['longitude'],
+                perPage: $validated['per_page'] ?? 15,
+                filter: $filter
+            );
 
-                        if (!empty($categoryIds)) {
-                            $categorySlugs = Category::query()
-                                ->whereIn('id', $categoryIds)
-                                ->pluck('slug')
-                                ->filter()
-                                ->unique()
-                                ->values()
-                                ->toArray();
-
-                            if (!empty($categorySlugs)) {
-                                $filter['categories'] = $categorySlugs;
-                            }
-                        }
-                    }
-                }
-            }
-            if ($validated['sort'] ?? null) {
-                $filter['sort'] = $validated['sort'];
-            }
-            if ($validated['search'] ?? null) {
-                $filter['search'] = $validated['search'];
-            }
-            if ($validated['store'] ?? null) {
-                $filter['store'] = $validated['store'];
-            }
-            if ($validated['include_child_categories'] ?? null) {
-                $filter['include_child_categories'] = $validated['include_child_categories'];
-            }
-            $products = Product::getProductsByLocation(latitude: $validated['latitude'], longitude: $validated['longitude'], perPage: $validated['per_page'] ?? 15, filter: $filter);
             if ($products->isEmpty()) {
                 return ApiResponseType::sendJsonResponse(
                     success: true,
                     message: 'labels.products_not_found',
-                    data: []
+                    data: [
+                        'current_page' => $products->currentPage(),
+                        'last_page'    => $products->lastPage(),
+                        'per_page'     => $products->perPage(),
+                        'total'        => $products->total(),
+                        'keywords'     => $products->related_keywords ?? [],
+                        'category_ids' => $products->category_ids ?? [],
+                        'brand_ids'    => $products->brand_ids ?? [],
+                        'data'         => [],
+                    ]
                 );
             }
-            $products->getCollection()->transform(fn($product) => new ProductListResource($product));
+
+            $products->getCollection()
+                ->transform(fn($product) => new ProductListResource($product));
+
             return ApiResponseType::sendJsonResponse(
                 success: true,
                 message: 'labels.products_fetched_successfully',
                 data: [
                     'current_page' => $products->currentPage(),
-                    'last_page' => $products->lastPage(),
-                    'per_page' => $products->perPage(),
-                    'total' => $products->total(),
-                    'keywords' => $products->related_keywords ?? [],
-                    'data' => $products->items(),
+                    'last_page'    => $products->lastPage(),
+                    'per_page'     => $products->perPage(),
+                    'total'        => $products->total(),
+                    'keywords'     => $products->related_keywords ?? [],
+                    'category_ids' => $products->category_ids ?? [],
+                    'brand_ids'    => $products->brand_ids ?? [],
+                    'data'         => $products->items(),
                 ]
             );
+
         } catch (ValidationException $e) {
             return ApiResponseType::sendJsonResponse(
                 success: false,
@@ -123,9 +94,86 @@ class ProductApiController extends Controller
             return ApiResponseType::sendJsonResponse(
                 success: false,
                 message: 'labels.error_fetching_products',
-                data: $e,
+                data: $e->getMessage(),
             );
         }
+    }
+
+    /**
+     * Build filters cleanly
+     */
+    private function buildFilters(array $validated): array
+    {
+        $filter = [];
+
+        $filter['categories'] = $this->explodeIfString($validated['categories'] ?? null);
+        $filter['brands']     = $this->explodeIfString($validated['brands'] ?? null);
+        $filter['sort']       = $validated['sort'] ?? null;
+        $filter['search']     = $validated['search'] ?? null;
+        $filter['store']      = $validated['store'] ?? null;
+        $filter['include_child_categories'] = $validated['include_child_categories'] ?? null;
+        // Attribute value filter (expects CSV of IDs). Convert to int array if provided
+        if (!empty($validated['attribute_values'])) {
+            $filter['attribute_values'] = $this->explodeCsvToInts($validated['attribute_values']);
+        }
+
+        $excludeSlugs = $this->explodeIfString($validated['exclude_product'] ?? null);
+
+        if (!empty($excludeSlugs)) {
+            $filter['exclude_product'] = $excludeSlugs;
+
+            // Auto-infer categories if not provided
+            if (empty($filter['categories'])) {
+                $filter['categories'] = Category::whereIn('id',
+                    Product::whereIn('slug', $excludeSlugs)
+                        ->pluck('category_id')
+                        ->filter()
+                        ->unique()
+                )
+                    ->pluck('slug')
+                    ->filter()
+                    ->unique()
+                    ->toArray();
+            }
+        }
+
+        return array_filter($filter, fn($value) => !is_null($value) && $value !== []);
+    }
+
+    /**
+     * Convert comma-separated string to array
+     */
+    private function explodeIfString(?string $value): ?array
+    {
+        if (!$value) {
+            return null;
+        }
+
+        return array_values(array_filter(array_map('trim', explode(',', $value))));
+    }
+
+    /**
+     * Convert comma-separated string to array<int>
+     */
+    private function explodeCsvToInts(?string $value): ?array
+    {
+        if (!$value) {
+            return null;
+        }
+
+        $parts = array_map('trim', explode(',', $value));
+        $ints = [];
+        foreach ($parts as $p) {
+            if ($p === '' || !is_numeric($p)) {
+                continue;
+            }
+            $n = (int)$p;
+            if ($n > 0) {
+                $ints[] = $n;
+            }
+        }
+        $ints = array_values(array_unique($ints));
+        return empty($ints) ? null : $ints;
     }
 
     /**

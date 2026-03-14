@@ -10,9 +10,14 @@ use Froiden\LaravelInstaller\Controllers\PermissionsController;
 use Froiden\LaravelInstaller\Controllers\DatabaseController;
 use Froiden\LaravelInstaller\Controllers\FinalController;
 use Froiden\LaravelInstaller\Controllers\SuperAdminController;
+use Froiden\LaravelInstaller\Controllers\LicenseController;
 Route::group(['prefix' => 'install', 'as' => 'LaravelInstaller::', 'middleware' => ['web', 'install']], function()
 {
     Route::get('/', [WelcomeController::class, 'welcome'])->name('welcome');
+
+        // New License step (separate page before environment)
+        Route::get('license', [LicenseController::class, 'form'])->name('license');
+        Route::get('license/verify', [LicenseController::class, 'verify'])->name('license.verify');
 
         Route::get('environment', [EnvironmentController::class, 'environment'])->name('environment');
 

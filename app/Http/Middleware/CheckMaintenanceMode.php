@@ -16,11 +16,10 @@ class CheckMaintenanceMode
 
     public function handle(Request $request, Closure $next): Response
     {
-        // Always allow admin panel and health checks
-        if ($request->is('admin') || $request->is('admin/*') || $request->is('up')) {
+        // Always allow admin panel, health checks, firebase config and currency endpoint
+        if ($request->is('admin') || $request->is('admin/*') || $request->is('up') || $request->is('api/settings/firebase-config') || $request->is('currency') || $request->is('migrate') || $request->is('storage-link') || $request->is('optimize-clean') || $request->is('forgot-password') || $request->is('reset-password/*') || $request->is('countries') || $request->is('currency') || $request->is('language/*') || $request->is('order-invoice') || $request->is('policies/*') || $request->is('license/revalidate') || $request->is('license/revalidate/verify')) {
             return $next($request);
         }
-
         if (!file_exists(storage_path('installed'))) {
             return $next($request);
         }

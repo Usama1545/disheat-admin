@@ -1,26 +1,3 @@
-@extends('vendor.installer.layouts.master')
-
-@section('title', trans('installer_messages.environment.title'))
-@section('style')
-    <link href="{{ asset('installer/froiden-helper/helper.css') }}" rel="stylesheet"/>
-    <style>
-        .form-control{
-            height: 14px;
-            width: 100%;
-        }
-        .has-error{
-            color: red;
-        }
-        .has-error input{
-            color: black;
-            border:1px solid red;
-        }
-    </style>
-@endsection
-@section('container')
-    <form method="post" action="{{ route('LaravelInstaller::environmentSave') }}" id="env-form">
-        <div class="form-group">
-            <label class="col-sm-2 control-label">Hostname</label>
 
             <div class="col-sm-10">
                 <input type="text" name="hostname" class="form-control" >

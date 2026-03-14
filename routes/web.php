@@ -3,6 +3,7 @@
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\CountryController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\LicenseRevalidateController;
 use Illuminate\Support\Facades\Artisan;
 use App\Http\Controllers\PolicyController;
 use Illuminate\Support\Facades\Route;
@@ -56,6 +57,7 @@ Route::get('/storage-link', function () {
     }
 });
 
+
 Route::get('/optimize-clean', function () {
     try {
         Artisan::call('config:cache');
@@ -67,6 +69,15 @@ Route::get('/optimize-clean', function () {
     }
 });
 
+Route::get('/clear-queue', function () {
+    try {
+        Artisan::call('queue:flush');
+        Artisan::call('queue:clear');
+        return "Queue cleared successfully.";
+    } catch (\Exception $e) {
+        return "Error: " . $e->getMessage();
+    }
+});
 
 //Route::get('/rollback', function () {
 //    try {
@@ -100,3 +111,7 @@ Route::get('order-invoice', [OrderController::class, 'orderInvoice']);
 Route::get('/policies/{policy}', [PolicyController::class, 'show'])
     ->whereIn('policy', \App\Enums\PoliciesEnum::values())
     ->name('policies.show');
+
+// License revalidation page (when app is not licensed)
+Route::get('/license/revalidate', [LicenseRevalidateController::class, 'form'])->name('license.revalidate');
+Route::post('/license/revalidate/verify', [LicenseRevalidateController::class, 'verify'])->name('license.revalidate.verify');

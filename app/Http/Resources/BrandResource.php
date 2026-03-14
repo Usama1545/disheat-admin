@@ -24,6 +24,8 @@ class BrandResource extends JsonResource
             'description' => $this->description,
             'metadata' => $this->metadata,
             'total_products' => $this->products_count ?? $this->products()->count(),
+            // Optional flag injected by controllers to indicate if this option is currently selectable
+            'enabled' => (bool) data_get($this->resource, 'enabled', true),
         ];
     }
 }

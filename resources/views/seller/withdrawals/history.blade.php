@@ -74,5 +74,5 @@
 @endsection
 
 @push('scripts')
-    <script src="{{asset('assets/js/seller-withdrawals.js')}}"></script>
+    <script src="{{hyperAsset('assets/js/seller-withdrawals.js')}}" defer></script>
 @endpush

@@ -5,6 +5,7 @@ namespace App\Types\Api;
 
 
 use Illuminate\Http\JsonResponse;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Validator;
 use InvalidArgumentException;
 
@@ -64,6 +65,15 @@ class ApiResponseType
         return response()->json(self::toArray(success: $success,message:  $message,data: $data), $status);
     }
 
-
+    public static function responseFromPaginator(LengthAwarePaginator $paginator): array
+    {
+        return [
+            'current_page' => $paginator->currentPage(),
+            'last_page' => $paginator->lastPage(),
+            'per_page' => $paginator->perPage(),
+            'total' => $paginator->total(),
+            'data' => $paginator->items(),
+        ];
+    }
 
 }

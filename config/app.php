@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Disheat Multivendor'),
+    'name' => env('APP_NAME', 'Hyperlocal Multivendor'),
 
     // Application semantic version used by SystemUpdater
     'version' => env('APP_VERSION', '1.0.0'),
@@ -126,5 +126,9 @@ return [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
+
+    'license_purchase' => env('LICENSE_PURCHASE_CODE'),
+    'license_token' => env('LICENSE_TOKEN'),
+    'license_signature' => env('LICENSE_SIGNATURE'),
 
 ];

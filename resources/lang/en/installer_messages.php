@@ -19,7 +19,7 @@ return [
      */
     'welcome' => [
         'title'   => 'Welcome To The Installer',
-        'message' => 'Let’s Set Up Your Disheat Marketplace.',
+        'message' => 'Let’s Set Up Your Hyperlocal Marketplace.',
     ],
 
 

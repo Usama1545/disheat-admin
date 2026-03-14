@@ -44,16 +44,32 @@ class StoreUpdateProductRequest extends FormRequest
             'guarantee_period' => 'nullable|string',
             'made_in' => 'nullable|string',
             'hsn_code' => 'nullable|string',
-            'main_image' => 'required|image|max:2048',
-            'additional_images.*' => 'nullable|image|max:2048',
+            // Image validations: limit size (2 MB) and restrict to common extensions
+            'main_image' => 'required|file|mimes:jpg,jpeg,png,webp|max:2048',
+            'additional_images.*' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:2048',
             'product_video' => 'nullable|file|mimes:mp4,mov,avi|max:20480',
             'tags' => 'nullable|array',
             'tags.*' => 'nullable|string',
             // Dynamic custom fields
             'custom_fields' => 'nullable|array',
             'custom_fields.*' => 'nullable|string|max:255',
+            // User-friendly Custom Sections (array-based)
+            'custom_sections' => 'nullable|array',
+            'custom_sections.*.id' => 'nullable|integer|exists:custom_product_sections,id',
+            'custom_sections.*.title' => 'required_with:custom_sections|string|max:255',
+            'custom_sections.*.description' => 'nullable|string',
+            'custom_sections.*.sort_order' => 'nullable|integer|min:0',
+            'custom_sections.*.fields' => 'nullable|array',
+            'custom_sections.*.fields.*.id' => 'nullable|integer|exists:custom_product_fields,id',
+            'custom_sections.*.fields.*.title' => 'required_without:custom_sections.*.fields.*.id|string|max:255',
+            'custom_sections.*.fields.*.description' => 'nullable|string',
+            'custom_sections.*.fields.*.sort_order' => 'nullable|integer|min:0',
+            'custom_sections.*.fields.*.image' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:2048',
             'pricing' => 'required|json',
             'variants_json' => 'required_if:type,variant|json',
+            // Custom product sections as JSON payload similar to pricing/variants
+            // Structure: [{id(optional), title, description, sort_order, fields:[{id, sort_order}]}]
+            'custom_sections_json' => 'nullable|json',
             'weight' => 'nullable|min:0',
             'height' => 'nullable|min:0',
             'length' => 'nullable|min:0',
@@ -76,6 +92,15 @@ class StoreUpdateProductRequest extends FormRequest
             'additional_images.*' => 'Additional Image',
             'pricing' => 'Pricing Information',
             'variants_json' => 'Variants Information',
+            'custom_sections_json' => 'Custom Sections',
+            'custom_sections' => 'Custom Sections',
+            'custom_sections.*.title' => 'Section Title',
+            'custom_sections.*.description' => 'Section Description',
+            'custom_sections.*.sort_order' => 'Section Sort Order',
+            'custom_sections.*.fields.*.title' => 'Field Title',
+            'custom_sections.*.fields.*.description' => 'Field Description',
+            'custom_sections.*.fields.*.sort_order' => 'Field Sort Order',
+            'custom_sections.*.fields.*.image' => 'Field Image',
         ];
     }
 
@@ -89,6 +114,7 @@ class StoreUpdateProductRequest extends FormRequest
             'pricing.required' => __('labels.pricing_required'),
             'pricing.json' => __('labels.pricing_json'),
             'variants_json.required_if' => __('labels.variants_json_required_if'),
+            'custom_sections_json.json' => __('labels.invalid_json'),
             'returnable_days.required_if' => __('labels.returnable_days_required_if'),
             'cancelable_till.required_if' => __('labels.cancelable_till_required_if'),
         ];
@@ -212,11 +238,11 @@ class StoreUpdateProductRequest extends FormRequest
     {
         if(!empty($this->file('variant_image'. $variant['id']))) {
             $variantImage = $this->file('variant_image' . $variant['id']);
-            if (!in_array($variantImage->getClientOriginalExtension(), ['jpg', 'jpeg', 'png', 'gif', 'webp'])) {
-                $validator->errors()->add('variants_json', $variant['title'] . ' variant image must be a file of type: jpg, jpeg, png, gif');
+            if (!in_array(strtolower($variantImage->getClientOriginalExtension()), ['jpg', 'jpeg', 'png', 'webp'])) {
+                $validator->errors()->add('variants_json', $variant['title'] . ' variant image must be a file of type: jpg, jpeg, png, webp');
                 return true;
             }
-            if ($variantImage->getSize() > 1024 * 1024) { // 2MB in bytes
+            if ($variantImage->getSize() > 2 * 1024 * 1024) { // 2MB in bytes
                 $validator->errors()->add('variants_json', $variant['title'] . ' variant image may not be greater than 2MB');
                 return true;
             }

@@ -20,6 +20,8 @@ class PolicyController extends Controller
             PoliciesEnum::ABOUTUS() => [SettingTypeEnum::WEB(), 'aboutUs', __('labels.about_us')],
             PoliciesEnum::DELIVERY_PRIVACY() => [SettingTypeEnum::DELIVERY_BOY(), 'privacyPolicy', __('labels.delivery_boy_privacy_policy')],
             PoliciesEnum::DELIVERY_TERMS() => [SettingTypeEnum::DELIVERY_BOY(), 'termsCondition', __('labels.delivery_boy_terms_condition')],
+            PoliciesEnum::SELLER_PRIVACY() => [SettingTypeEnum::SELLER(), 'privacyPolicy', __('labels.seller_privacy_policy')],
+            PoliciesEnum::SELLER_TERMS() => [SettingTypeEnum::SELLER(), 'termsCondition', __('labels.seller_terms_condition')],
         ];
 
         [$variable, $key, $title] = $mapping[$policy->value] ?? [SettingTypeEnum::WEB()->value, 'termsCondition', __('labels.terms_condition')];

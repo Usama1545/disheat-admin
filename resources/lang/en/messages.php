@@ -201,5 +201,18 @@ return [
     'order_item_id_required' => 'Order item ID is required.',
     'cashback_info_message' => 'Cashback will be credited once the order is delivered and the return period is completed.',
     'category_cannot_be_deactivated_with_products' => "Category can't be deactivated because it contains products.",
-    'service_account_file_description' => 'The service file is stored in a private directory, so it cannot be accessed directly via URL. If you try to open it in the browser, it will show a 403 Forbidden error. This is expected behavior and there is no issue with the setup.'
+    'service_account_file_description' => 'The service file is stored in a private directory, so it cannot be accessed directly via URL. If you try to open it in the browser, it will show a 403 Forbidden error. This is expected behavior and there is no issue with the setup.',
+    'select_zone_message' => 'Your store location must be within our available delivery areas. Please select a location inside the blue highlighted zones on the map.',
+    'cron_detected' => 'Detected. The log file exists at :path.',
+    'cron_log_last_updated' => 'The log file exists at :path.',
+
+    'cron_not_detected_full' => 'Notifications are currently not functioning because the required cron job has not been configured on the server.',
+
+    'add_cron_instruction' => 'Add the following cron entry on your server to process queued notifications. Output is redirected to a log file so you can verify whether the cron is running.',
+
+    'php_path_note' => 'Note: If your PHP binary path differs from /usr/bin/php, adjust it accordingly.',
+
+    'view_documentation' => 'For more details on configuring notifications, please refer to our documentation.',
+    'log_file_not_found'        => 'The log file was not found at',
+    'cron_has_not_run_yet'      => 'This likely means the cron job has not been added or has not executed yet.',
 ];

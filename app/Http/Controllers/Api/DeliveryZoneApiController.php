@@ -142,4 +142,35 @@ class DeliveryZoneApiController extends Controller
             data: $response
         );
     }
+
+    /**
+     * Get stores by map bounds
+     */
+    public function storesByMap(Request $request): JsonResponse
+    {
+        $request->validate([
+            'ne_lat' => 'required|numeric',
+            'ne_lng' => 'required|numeric',
+            'sw_lat' => 'required|numeric',
+            'sw_lng' => 'required|numeric',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+        ]);
+
+
+            $stores = DeliveryZoneService::getStoresByBounds(
+                $request->ne_lat,
+                $request->ne_lng,
+                $request->sw_lat,
+                $request->sw_lng,
+                $request->latitude,
+                $request->longitude
+            );
+
+        return ApiResponseType::sendJsonResponse(
+            success: $stores['success'],
+            message: $stores['message'],
+            data: $stores['data']
+        );
+    }
 }

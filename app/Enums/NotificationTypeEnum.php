@@ -18,6 +18,17 @@ use ArchTech\Enums\Values;
  * @method static PROMOTION()
  * @method static SYSTEM()
  * @method static PRODUCT()
+ * @method static ORDER_UPDATE()
+ * @method static NEW_ORDER()
+ * @method static RETURN_ORDER()
+ * @method static RETURN_ORDER_UPDATE()
+ * @method static WALLET_TRANSACTION()
+ * @method static WITHDRAWAL_REQUEST()
+ * @method static WITHDRAWAL_PROCESS()
+ * @method static SETTLEMENT_PROCESS()
+ * @method static SETTLEMENT_CREATE()
+ * @method static ORDER_READY_FOR_PICKUP()
+ * @method static RETURN_ORDER_AVAILABLE()
  */
 enum NotificationTypeEnum: string
 {
@@ -31,22 +42,17 @@ enum NotificationTypeEnum: string
     case SYSTEM = 'system';
     case PRODUCT = 'product';
 
-    public static function values(): array
-    {
-        return array_column(self::cases(), 'value');
-    }
+    case ORDER_UPDATE = 'order_update';
+    case NEW_ORDER = 'new_order';
+    case RETURN_ORDER = 'return_order';
+    case RETURN_ORDER_UPDATE = 'return_order_update';
+    case WALLET_TRANSACTION = 'wallet_transaction';
+    case WITHDRAWAL_REQUEST = 'withdrawal_request';
+    case WITHDRAWAL_PROCESS = 'withdrawal_process';
 
-    public static function fromString(string $type): self
-    {
-        return match ($type) {
-            'general' => self::GENERAL,
-            'order' => self::ORDER,
-            'payment' => self::PAYMENT,
-            'delivery' => self::DELIVERY,
-            'promotion' => self::PROMOTION,
-            'system' => self::SYSTEM,
-            'product', 'product_created', 'product_updated', 'product_status_updated' => self::PRODUCT,
-            default => self::GENERAL,
-        };
-    }
+    case SETTLEMENT_PROCESS = 'settlement_process';
+    case SETTLEMENT_CREATE = 'settlement_create';
+    case ORDER_READY_FOR_PICKUP = 'order_ready_for_pickup';
+    case RETURN_ORDER_AVAILABLE = 'return_order_available';
+
 }

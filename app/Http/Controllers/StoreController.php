@@ -219,8 +219,8 @@ class StoreController extends Controller
     {
         $this->authorize('create', Store::class);
         $bankAccountTypes = BankAccountTypeEnum::values();
-        $setting = Setting::find(SettingTypeEnum::AUTHENTICATION());
-        $googleApiKey = $setting->value['googleApiKey'] ?? null;
+        $setting = Setting::find(SettingTypeEnum::WEB());
+        $googleApiKey = $setting->value['googleMapKey'] ?? null;
         return view($this->panelView('stores.form'), compact('bankAccountTypes', 'googleApiKey'));
     }
 
@@ -350,7 +350,7 @@ class StoreController extends Controller
             $this->authorize('delete', $store);
             $store->delete();
             $store->zones()->detach();
-            $store->productVariants()->detach();
+            $store->productVariants()->delete();
             $store->clearMediaCollection(SpatieMediaCollectionName::VOIDED_CHECK());
             $store->clearMediaCollection(SpatieMediaCollectionName::ADDRESS_PROOF());
             DB::commit();
@@ -374,7 +374,7 @@ class StoreController extends Controller
         if (!$store) {
             abort(404, 'Store not found');
         }
-        $this->authorize('update', $store);
+        $this->authorize('view', $store);
         return view($this->panelView('stores.configuration'), compact('store'));
     }
 

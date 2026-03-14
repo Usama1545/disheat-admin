@@ -443,12 +443,12 @@
     </div>
     <!-- END PAGE BODY -->
     <script>
-        const toggle = document.getElementById('referEarnToggle');
-        const fields = document.getElementById('referEarnFields');
-        const toggleFields = () => {
-            fields.style.display = toggle.checked ? 'block' : 'none';
-        };
-        toggle.addEventListener('change', toggleFields);
-        toggleFields(); // initial state
+        // const toggle = document.getElementById('referEarnToggle');
+        // const fields = document.getElementById('referEarnFields');
+        // const toggleFields = () => {
+        //     fields.style.display = toggle.checked ? 'block' : 'none';
+        // };
+        // toggle.addEventListener('change', toggleFields);
+        // toggleFields(); // initial state
     </script>
 @endsection

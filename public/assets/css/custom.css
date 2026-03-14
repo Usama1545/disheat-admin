@@ -311,3 +311,17 @@ div.dt-button-collection .dropdown-menu {
 .step__item.active .step__icon, .step__item.active~.step__divider, .step__item.active~.step__item .step__icon{
     background-color: var(--tblr-primary) !important;
 }
+
+.img-box-60{
+    width: 60px;
+    height: 60px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.img-box-60 img{
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}

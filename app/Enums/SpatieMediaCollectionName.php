@@ -8,6 +8,22 @@ use ArchTech\Enums\Values;
 
 /**
  * @method static PROFILE_IMAGE()
+ * @method static PRODUCT_MAIN_IMAGE()
+ * @method static PRODUCT_ADDITIONAL_IMAGE()
+ * @method static PRODUCT_VIDEO()
+ * @method static BANNER_IMAGE()
+ * @method static ADDRESS_PROOF()
+ * @method static VOIDED_CHECK()
+ * @method static VARIANT_IMAGE()
+ * @method static REVIEW_IMAGES()
+ * @method static DRIVER_LICENSE()
+ * @method static VEHICLE_REGISTRATION()
+ * @method static FEATURED_SECTION_BACKGROUND_IMAGE()
+ * @method static FEATURED_SECTION_BG_DESKTOP_4K()
+ * @method static FEATURED_SECTION_BG_DESKTOP_FHD()
+ * @method static FEATURED_SECTION_BG_TABLET()
+ * @method static FEATURED_SECTION_BG_MOBILE()
+ * @method static CATEGORY_ICON()
  */
 enum SpatieMediaCollectionName: string
 {

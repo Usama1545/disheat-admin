@@ -153,6 +153,8 @@ class AuthApiController extends Controller
                 $user->update([
                     'email_verified_at' => $firebaseUser->emailVerified ? now() : null,
                 ]);
+                // Store FCM token if provided
+                $this->storeFcmToken($request, $user);
                 $token = $user->createToken($firebaseUser->email)->plainTextToken;
                 event(new UserLoggedIn($user));
                 return response()->json([
@@ -207,6 +209,8 @@ class AuthApiController extends Controller
                 Log::error('Welcome wallet credit failed for user ' . $user->id . ': ' . $th->getMessage());
             }
             event(new UserRegistered($user));
+            // Store FCM token if provided
+            $this->storeFcmToken($request, $user);
             return response()->json([
                 'success' => true,
                 'message' => __('labels.registration_successful'),
@@ -284,6 +288,8 @@ class AuthApiController extends Controller
                     $user->update([
                         'email_verified_at' => ($firebaseUser->emailVerified ?? ($claims['email_verified'] ?? false)) ? now() : null,
                     ]);
+                    // Store FCM token if provided
+                    $this->storeFcmToken($request, $user);
                     $token = $user->createToken($email)->plainTextToken;
                     event(new UserLoggedIn($user));
                     return response()->json([
@@ -349,6 +355,8 @@ class AuthApiController extends Controller
                 Log::error('Welcome wallet credit failed for user ' . $user->id . ': ' . $th->getMessage());
             }
             event(new UserRegistered($user));
+            // Store FCM token if provided
+            $this->storeFcmToken($request, $user);
             return response()->json([
                 'success' => true,
                 'message' => __('labels.registration_successful'),
@@ -447,6 +455,8 @@ class AuthApiController extends Controller
             }
 
             // Successful login for existing user
+            // Store FCM token if provided
+            $this->storeFcmToken($request, $user);
             $token = $user->createToken($phone)->plainTextToken;
             event(new UserLoggedIn($user));
             return response()->json([
