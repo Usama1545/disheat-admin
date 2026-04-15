@@ -57,8 +57,11 @@ use App\Policies\SettingPolicy;
 use App\Policies\StorePolicy;
 use App\Policies\SystemUserPolicy;
 use App\Policies\TaxClassPolicy;
+use App\Policies\AddonPolicy;
 use App\Policies\OrderReturnPolicy;
 use App\Models\Wallet;
+use App\Models\Addon;
+
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Spatie\Permission\Models\Permission;
@@ -98,6 +101,7 @@ class AuthServiceProvider extends ServiceProvider
         Notification::class => NotificationPolicy::class,
         Wallet::class => WalletPolicy::class,
         SellerStatement::class => SellerStatementPolicy::class,
+        Addon::class => AddonPolicy::class,
     ];
     /**
      * Register services.

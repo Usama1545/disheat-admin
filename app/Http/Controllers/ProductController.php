@@ -13,11 +13,13 @@ use App\Enums\SpatieMediaCollectionName;
 use App\Http\Requests\Product\StoreUpdateProductRequest;
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\Store;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\StoreProductVariant;
 use App\Services\CategoryService;
 use App\Services\GlobalAttributeService;
+use App\Services\AddonService;
 use App\Services\ProductService;
 use App\Traits\ChecksPermissions;
 use App\Traits\PanelAware;
@@ -36,7 +38,7 @@ class ProductController extends Controller
 {
     use PanelAware, ChecksPermissions, AuthorizesRequests;
 
-    public float $sellerId;
+    public int $sellerId;
     protected bool $editPermission = false;
     protected bool $deletePermission = false;
     protected bool $createPermission = false;
@@ -46,8 +48,7 @@ class ProductController extends Controller
     public function __construct()
     {
         $user = auth()->user();
-        $seller = $user?->seller();
-        $this->sellerId = $seller ? $seller->id : 0;
+        $this->sellerId = auth()->user()->seller()->id ?? 0;
 
         if ($this->getPanel() === 'seller') {
             $this->viewPermission = $this->hasPermission(SellerPermissionEnum::PRODUCT_VIEW()) || $user->hasRole(DefaultSystemRolesEnum::SELLER());
@@ -70,6 +71,8 @@ class ProductController extends Controller
         $columns = [
             ['data' => 'id', 'name' => 'id', 'title' => __('labels.id')],
             ['data' => 'product_details', 'name' => 'product_details', 'title' => __('labels.product_details')],
+            ['data' => 'category', 'name' => 'category', 'title' => __('labels.category')],
+            ['data' => 'addons', 'name' => 'addons', 'title' => __('labels.addons')],
             ['data' => 'admin_approval_status', 'name' => 'admin_approval_status', 'title' => __('labels.admin_approval_status')],
             ['data' => 'created_at', 'name' => 'created_at', 'title' => __('labels.created_at')],
             ['data' => 'action', 'name' => 'action', 'title' => __('labels.action'), 'orderable' => false, 'searchable' => false],
@@ -92,10 +95,13 @@ class ProductController extends Controller
 
         $categories = CategoryService::getCategoriesWithParent();
         $attributes = GlobalAttributeService::getAttributesWithValue($this->sellerId);
+        $addons = AddonService::getAttributesWithValue($this->sellerId);
+        $stores = Store::where('seller_id', $this->sellerId)->select('id', 'name')->get();
 
         $categories = json_encode($categories->toArray());
         $attributes = json_encode($attributes->toArray());
-        return view($this->panelView('products.form'), compact('categories', 'attributes'));
+        $addons = json_encode($addons->toArray());
+        return view($this->panelView('products.form'), compact('categories', 'attributes','addons', 'stores'));
     }
 
     /**
@@ -128,57 +134,17 @@ class ProductController extends Controller
      */
     public function show(string $id)
     {
-        $product = ProductService::getProductWithVariants($id);
+        $product = Product::with('faqs', 'category', 'brand','addons')->findOrFail($id);
         if (!$product) {
             abort(404, "Product Not Found");
         }
         $this->authorize('view', $product);
 
         // Load relationships
-        $product->load(['faqs', 'category', 'brand', 'productCondition']);
-
-        // Get media
-        $product->product_video = $product->getFirstMediaUrl(SpatieMediaCollectionName::PRODUCT_VIDEO());
-
-        // Get store-wise pricing data for variants
-        $storeVariantPricing = [];
-        $variants = ProductVariant::where('product_id', $id)->get();
-
-        foreach ($variants as $variant) {
-            // Load variant attributes
-            $variant->load(['attributes.attribute', 'attributes.attributeValue']);
-
-            // Get store-specific pricing for this variant
-            $storePricing = StoreProductVariant::where('product_variant_id', $variant->id)
-                ->with('store')
-                ->get()
-                ->map(function ($item) {
-                    return [
-                        'store_id' => $item->store_id,
-                        'store_name' => $item->store->name ?? '',
-                        'price' => $item->price_exclude_tax,
-                        'special_price' => $item->special_price_exclude_tax,
-                        'cost' => $item->cost,
-                        'stock' => $item->stock,
-                        'sku' => $item->sku
-                    ];
-                });
-
-            $storeVariantPricing[$variant->id] = [
-                'variant_id' => $variant->id,
-                'title' => $variant->title,
-                'attributes' => $variant->attributes->map(function ($attr) {
-                    return [
-                        'attribute_name' => $attr->attribute->title ?? '',
-                        'attribute_value' => $attr->attributeValue->title ?? ''
-                    ];
-                }),
-                'store_pricing' => $storePricing
-            ];
-        }
+        $product->load(['faqs', 'category', 'brand','addons']);
         $updateStatusPermission = $this->updateStatusPermission;
 
-        return view($this->panelView('products.show'), compact('product', 'storeVariantPricing', 'updateStatusPermission'));
+        return view($this->panelView('products.show'), compact('product'));
     }
 
     /**
@@ -186,28 +152,29 @@ class ProductController extends Controller
      */
     public function edit(string $id)
     {
-        $product = ProductService::getProductWithVariants($id);
+        $product = Product::with('faqs', 'category', 'brand','addons')->findOrFail($id);
         if (!$product) {
             abort(404, "Product Not Found");
         }
         $this->authorize('update', $product);
-        $productVariants = null;
-        $singleProductVariant = null;
-        if ($product->type === ProductTypeEnum::VARIANT()) {
-            foreach ($product->variants as $key => $variant) {
-                $product->variants[$key]->image = $variant->image;
-            }
-            $productVariants = $product->variants;
-        } else {
-            $singleProductVariant = $product->variants->first();
-        }
-        $product->product_video = $product->getFirstMediaUrl(SpatieMediaCollectionName::PRODUCT_VIDEO());
         $categories = CategoryService::getCategoriesWithParent();
-
         $attributes = GlobalAttributeService::getAttributesWithValue($this->sellerId);
+        $addons = AddonService::getAttributesWithValue($this->sellerId);
+        $stores = Store::where('seller_id', $this->sellerId)->select('id', 'name')->get();
+        $addons = json_encode($addons->toArray());
+
+
+        $selectedAddons = $product->addons->map(fn($a) => [
+            'id' => $a->id,
+            'name' => $a->name
+        ]);
+
+        $selectedAddons = json_encode($selectedAddons);
+
         $categories = json_encode($categories->toArray());
         $attributes = json_encode($attributes->toArray());
-        return view($this->panelView('products.form'), compact('product', 'productVariants', 'singleProductVariant', 'categories', 'attributes'));
+
+        return view($this->panelView('products.form'), compact('product','categories', 'attributes', 'addons','stores', 'selectedAddons'));
     }
 
     /**
@@ -375,7 +342,7 @@ class ProductController extends Controller
 
     private function buildBaseQuery(): Builder
     {
-        $query = Product::with(['category', 'seller']);
+        $query = Product::with(['category', 'seller', 'addons']);
 
         if ($this->getPanel() === 'seller') {
             $query->where('seller_id', $this->sellerId);
@@ -426,9 +393,7 @@ class ProductController extends Controller
 
     private function formatProductData(Product $product): array
     {
-        $productType = '<span class="badge ' .
-            ($product->type == ProductTypeEnum::VARIANT() ? "bg-danger-lt" : "bg-info-lt") .
-            '">' . $product->type . '</span>';
+        $productType = '<span class="badge bg-info-lt"> Simple </span>';
         $status = view('partials.status', ['status' => $product->status ?? ""])->render();
         return [
             'id' => $product->id,
@@ -438,14 +403,15 @@ class ProductController extends Controller
                 ])->render() .
                 "</div><div>
                         <p class='m-0 fw-medium text-primary'>" . __('labels.title') . ": {$product->title}</p>
-                        <p class='m-0'>" . __('labels.category') . ": {$product->category?->title}</p>
-                        <p class='m-0'>" . __('labels.brand') . ": {$product->brand?->title}</p>
                         <p class='m-0'>" . __('labels.featured') . ": " . ($product->featured ? 'Yes' : 'No') . "</p>
                         <div class='d-flex gap-1'>" . $productType . " " . $status . "</div>" .
 
                 "</div></div>",
+            'category' => $product->category?->title,
+            'addons' => view('partials.addons', ['addons' => $product->addons ?? ""])->render(),
             'admin_approval_status' => view('partials.status', ['status' => $product->verification_status ?? ""])->render(),
             'created_at' => $product->created_at->format('Y-m-d'),
+          
             'action' => view('partials.product-actions', [
                 'modelName' => 'product',
                 'id' => $product->id,

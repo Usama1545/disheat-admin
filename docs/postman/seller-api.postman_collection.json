@@ -1,0 +1,514 @@
+{
+  "info": {
+    "_postman_id": "b6f4264f-6006-47c6-b651-50f6dce4f5e7",
+    "name": "Hyperlocal Seller API",
+    "description": "Generated from routes/seller-api.php. Set base_url to the Laravel API root, for example http://127.0.0.1:8000/api. Login stores access_token into the token collection variable.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://127.0.0.1:8000/api" },
+    { "key": "token", "value": "" },
+    { "key": "seller_email", "value": "seller@example.com" },
+    { "key": "seller_password", "value": "password123" },
+    { "key": "store_id", "value": "1" },
+    { "key": "attribute_id", "value": "1" },
+    { "key": "attribute_value_id", "value": "1" },
+    { "key": "product_id", "value": "1" },
+    { "key": "product_faq_id", "value": "1" },
+    { "key": "brand_id", "value": "1" },
+    { "key": "tax_class_id", "value": "1" },
+    { "key": "seller_order_id", "value": "1" },
+    { "key": "order_item_id", "value": "1" },
+    { "key": "order_status", "value": "accepted" },
+    { "key": "transaction_id", "value": "1" },
+    { "key": "withdrawal_id", "value": "1" },
+    { "key": "role_id", "value": "1" },
+    { "key": "role_name", "value": "Manager" },
+    { "key": "system_user_id", "value": "1" },
+    { "key": "notification_id", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register Seller",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name", "value": "Demo Seller", "type": "text" },
+                { "key": "email", "value": "{{seller_email}}", "type": "text" },
+                { "key": "mobile", "value": "+15551234567", "type": "text" },
+                { "key": "password", "value": "{{seller_password}}", "type": "text" },
+                { "key": "address", "value": "123 Market Street", "type": "text" },
+                { "key": "city", "value": "Lahore", "type": "text" },
+                { "key": "state", "value": "Punjab", "type": "text" },
+                { "key": "landmark", "value": "Near Main Road", "type": "text" },
+                { "key": "zipcode", "value": "54000", "type": "text" },
+                { "key": "country", "value": "Pakistan", "type": "text" },
+                { "key": "latitude", "value": "31.5204", "type": "text" },
+                { "key": "longitude", "value": "74.3587", "type": "text" },
+                { "key": "business_license", "type": "file", "src": [] },
+                { "key": "articles_of_incorporation", "type": "file", "src": [] },
+                { "key": "national_identity_card", "type": "file", "src": [] },
+                { "key": "authorized_signature", "type": "file", "src": [] }
+              ]
+            },
+            "url": "{{base_url}}/seller/register"
+          }
+        },
+        {
+          "name": "Login Seller",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.access_token) pm.collectionVariables.set('token', json.access_token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{seller_email}}\",\n  \"password\": \"{{seller_password}}\",\n  \"fcm_token\": \"optional-fcm-token\",\n  \"device_type\": \"web\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/seller/login"
+          }
+        },
+        {
+          "name": "Logout Seller",
+          "request": { "method": "POST", "header": [], "url": "{{base_url}}/seller/logout" }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Overview",
+          "request": { "method": "GET", "header": [], "url": "{{base_url}}/seller/dashboard" }
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        { "name": "List Notifications", "request": { "method": "GET", "header": [], "url": "{{base_url}}/seller/notifications?per_page=15" } },
+        { "name": "Unread Count", "request": { "method": "GET", "header": [], "url": "{{base_url}}/seller/notifications/unread-count" } },
+        { "name": "Mark All Read", "request": { "method": "POST", "header": [], "url": "{{base_url}}/seller/notifications/mark-all-read" } },
+        { "name": "Mark Notification Read", "request": { "method": "POST", "header": [], "url": "{{base_url}}/seller/notifications/{{notification_id}}/read" } },
+        { "name": "Mark Notification Unread", "request": { "method": "POST", "header": [], "url": "{{base_url}}/seller/notifications/{{notification_id}}/unread" } }
+      ]
+    },
+    {
+      "name": "Stores",
+      "item": [
+        { "name": "List Stores", "request": { "method": "GET", "header": [], "url": "{{base_url}}/seller/stores?page=1&per_page=15&search=&status=&visibility_status=&verification_status=" } },
+        { "name": "Store Enums", "request": { "method": "GET", "header": [], "url": "{{base_url}}/seller/stores/enums" } },
+        { "name": "Show Store", "request": { "method": "GET", "header": [], "url": "{{base_url}}/seller/stores/{{store_id}}" } },
+        {
+          "name": "Create Store",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name", "value": "Downtown Store", "type": "text" },
+                { "key": "contact_email", "value": "store@example.com", "type": "text" },
+                { "key": "country", "value": "Pakistan", "type": "text" },
+                { "key": "contact_number", "value": "15551234567", "type": "text" },
+                { "key": "address", "value": "123 Market Street", "type": "text" },
+                { "key": "landmark", "value": "Near Main Road", "type": "text" },
+                { "key": "city", "value": "Lahore", "type": "text" },
+                { "key": "state", "value": "Punjab", "type": "text" },
+                { "key": "zipcode", "value": "54000", "type": "text" },
+                { "key": "latitude", "value": "31.5204", "type": "text" },
+                { "key": "longitude", "value": "74.3587", "type": "text" },
+                { "key": "tax_name", "value": "Sales Tax", "type": "text" },
+                { "key": "tax_number", "value": "TAX-12345", "type": "text" },
+                { "key": "bank_name", "value": "Demo Bank", "type": "text" },
+                { "key": "bank_branch_code", "value": "BR001", "type": "text" },
+                { "key": "account_holder_name", "value": "Demo Seller", "type": "text" },
+                { "key": "account_number", "value": "1234567890", "type": "text" },
+                { "key": "routing_number", "value": "987654321", "type": "text" },
+                { "key": "bank_account_type", "value": "checking", "type": "text" },
+                { "key": "store_logo", "type": "file", "src": [] },
+                { "key": "store_banner", "type": "file", "src": [], "disabled": true },
+                { "key": "address_proof", "type": "file", "src": [] },
+                { "key": "voided_check", "type": "file", "src": [] }
+              ]
+            },
+            "url": "{{base_url}}/seller/stores"
+          }
+        },
+        {
+          "name": "Update Store",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name", "value": "Downtown Store Updated", "type": "text" },
+                { "key": "contact_email", "value": "store@example.com", "type": "text" },
+                { "key": "country", "value": "Pakistan", "type": "text" },
+                { "key": "contact_number", "value": "15551234567", "type": "text" },
+                { "key": "address", "value": "123 Market Street", "type": "text" },
+                { "key": "landmark", "value": "Near Main Road", "type": "text" },
+                { "key": "city", "value": "Lahore", "type": "text" },
+                { "key": "state", "value": "Punjab", "type": "text" },
+                { "key": "zipcode", "value": "54000", "type": "text" },
+                { "key": "latitude", "value": "31.5204", "type": "text" },
+                { "key": "longitude", "value": "74.3587", "type": "text" },
+                { "key": "tax_name", "value": "Sales Tax", "type": "text" },
+                { "key": "tax_number", "value": "TAX-12345", "type": "text" },
+                { "key": "bank_name", "value": "Demo Bank", "type": "text" },
+                { "key": "bank_branch_code", "value": "BR001", "type": "text" },
+                { "key": "account_holder_name", "value": "Demo Seller", "type": "text" },
+                { "key": "account_number", "value": "1234567890", "type": "text" },
+                { "key": "routing_number", "value": "987654321", "type": "text" },
+                { "key": "bank_account_type", "value": "checking", "type": "text" },
+                { "key": "store_logo", "type": "file", "src": [] },
+                { "key": "store_banner", "type": "file", "src": [], "disabled": true }
+              ]
+            },
+            "url": "{{base_url}}/seller/stores/{{store_id}}"
+          }
+        },
+        { "name": "Delete Store", "request": { "method": "DELETE", "header": [], "url": "{{base_url}}/seller/stores/{{store_id}}" } },
+        {
+          "name": "Update Store Status",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"online\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{base_url}}/seller/stores/{{store_id}}/status"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Attributes",
+      "item": [
+        { "name": "List Attributes", "request": { "method": "GET", "header": [], "url": "{{base_url}}/seller/attributes?page=1&per_page=15&search=" } },
+        { "name": "Show Attribute", "request": { "method": "GET", "header": [], "url": "{{base_url}}/seller/attributes/{{attribute_id}}" } },
+        {
+          "name": "Create Attribute",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Color\",\n  \"label\": \"Color\",\n  \"swatche_type\": \"color\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{base_url}}/seller/attributes"
+          }
+        },
+        {
+          "name": "Update Attribute",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Color\",\n  \"label\": \"Product Color\",\n  \"swatche_type\": \"color\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{base_url}}/seller/attributes/{{attribute_id}}"
+          }
+        },
+        { "name": "Delete Attribute", "request": { "method": "DELETE", "header": [], "url": "{{base_url}}/seller/attributes/{{attribute_id}}" } }
+      ]
+    },
+    {
+      "name": "Attribute Values",
+      "item": [
+        { "name": "List Attribute Values", "request": { "method": "GET", "header": [], "url": "{{base_url}}/seller/attribute-values?page=1&per_page=15&attribute_id={{attribute_id}}&search=" } },
+        { "name": "Show Attribute Value", "request": { "method": "GET", "header": [], "url": "{{base_url}}/seller/attribute-values/{{attribute_value_id}}" } },
+        {
+          "name": "Create Attribute Values",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "attribute_id", "value": "{{attribute_id}}", "type": "text" },
+                { "key": "values[0]", "value": "Red", "type": "text" },
+                { "key": "values[1]", "value": "Blue", "type": "text" },
+                { "key": "swatche_value[0]", "value": "#ff0000", "type": "text" },
+                { "key": "swatche_value[1]", "value": "#0000ff", "type": "text" }
+              ]
+            },
+            "url": "{{base_url}}/seller/attribute-values"
+          }
+        },
+        {
+          "name": "Update Attribute Value",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "attribute_id", "value": "{{attribute_id}}", "type": "text" },
+                { "key": "values[0]", "value": "Red", "type": "text" },
+                { "key": "swatche_value[0]", "value": "#ff0000", "type": "text" }
+              ]
+            },
+            "url": "{{base_url}}/seller/attribute-values/{{attribute_value_id}}"
+          }
+        },
+        { "name": "Delete Attribute Value", "request": { "method": "DELETE", "header": [], "url": "{{base_url}}/seller/attribute-values/{{attribute_value_id}}" } }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        { "name": "List Products", "request": { "method": "GET", "header": [], "url": "{{base_url}}/seller/products?page=1&per_page=15&search=&type=simple&status=active&verification_status=&category_id=&product_filter=" } },
+        { "name": "Product Enums", "request": { "method": "GET", "header": [], "url": "{{base_url}}/seller/products/enums" } },
+        { "name": "Show Product", "request": { "method": "GET", "header": [], "url": "{{base_url}}/seller/products/{{product_id}}" } },
+        {
+          "name": "Create Product",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title", "value": "Demo Product", "type": "text" },
+                { "key": "type", "value": "simple", "type": "text" },
+                { "key": "category_id", "value": "1", "type": "text" },
+                { "key": "store_id", "value": "{{store_id}}", "type": "text" },
+                { "key": "brand_id", "value": "{{brand_id}}", "type": "text", "disabled": true },
+                { "key": "tax_groups[]", "value": "{{tax_class_id}}", "type": "text", "disabled": true },
+                { "key": "base_prep_time", "value": "10", "type": "text" },
+                { "key": "short_description", "value": "Short product description", "type": "text" },
+                { "key": "description", "value": "Full product description", "type": "text" },
+                { "key": "indicator", "value": "veg", "type": "text", "disabled": true },
+                { "key": "image_fit", "value": "cover", "type": "text" },
+                { "key": "is_attachment_required", "value": "0", "type": "text" },
+                { "key": "featured", "value": "0", "type": "text" },
+                { "key": "addon_ids", "value": "[]", "type": "text", "disabled": true },
+                { "key": "price", "value": "100", "type": "text" },
+                { "key": "compare_at_price", "value": "120", "type": "text" },
+                { "key": "pricing", "value": "{\"store_pricing\":[{\"store_id\":1,\"price\":100,\"special_price\":90,\"cost\":70,\"stock\":25,\"sku\":\"DEMO-SIMPLE-001\"}]}", "type": "text" },
+                { "key": "variants_json", "value": "[]", "type": "text", "disabled": true },
+                { "key": "custom_fields[color]", "value": "Red", "type": "text", "disabled": true },
+                { "key": "custom_sections[0][title]", "value": "Ingredients", "type": "text", "disabled": true },
+                { "key": "custom_sections[0][description]", "value": "Section details", "type": "text", "disabled": true },
+                { "key": "custom_sections[0][fields][0][title]", "value": "Salt", "type": "text", "disabled": true },
+                { "key": "main_image", "type": "file", "src": [] },
+                { "key": "additional_images[]", "type": "file", "src": [], "disabled": true }
+              ]
+            },
+            "url": "{{base_url}}/seller/products"
+          }
+        },
+        {
+          "name": "Update Product",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title", "value": "Demo Product Updated", "type": "text" },
+                { "key": "type", "value": "simple", "type": "text" },
+                { "key": "category_id", "value": "1", "type": "text" },
+                { "key": "store_id", "value": "{{store_id}}", "type": "text" },
+                { "key": "base_prep_time", "value": "10", "type": "text" },
+                { "key": "short_description", "value": "Updated short product description", "type": "text" },
+                { "key": "description", "value": "Updated full product description", "type": "text" },
+                { "key": "image_fit", "value": "cover", "type": "text" },
+                { "key": "is_attachment_required", "value": "0", "type": "text" },
+                { "key": "featured", "value": "0", "type": "text" },
+                { "key": "price", "value": "100", "type": "text" },
+                { "key": "compare_at_price", "value": "120", "type": "text" },
+                { "key": "pricing", "value": "{\"store_pricing\":[{\"store_id\":1,\"price\":100,\"special_price\":90,\"cost\":70,\"stock\":25,\"sku\":\"DEMO-SIMPLE-001\"}]}", "type": "text" },
+                { "key": "main_image", "type": "file", "src": [] }
+              ]
+            },
+            "url": "{{base_url}}/seller/products/{{product_id}}"
+          }
+        },
+        {
+          "name": "Update Product Status",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"active\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{base_url}}/seller/products/{{product_id}}/update-status"
+          }
+        },
+        { "name": "Delete Product", "request": { "method": "DELETE", "header": [], "url": "{{base_url}}/seller/products/{{product_id}}" } }
+      ]
+    },
+    {
+      "name": "Product FAQs",
+      "item": [
+        { "name": "List Product FAQs", "request": { "method": "GET", "header": [], "url": "{{base_url}}/seller/product-faqs?page=1&per_page=15&search=&product_id={{product_id}}" } },
+        { "name": "Show Product FAQ", "request": { "method": "GET", "header": [], "url": "{{base_url}}/seller/product-faqs/{{product_faq_id}}" } },
+        {
+          "name": "Create Product FAQ",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"product_id\": {{product_id}},\n  \"question\": \"What is the shelf life?\",\n  \"answer\": \"Best used within 30 days.\",\n  \"status\": \"active\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{base_url}}/seller/product-faqs"
+          }
+        },
+        {
+          "name": "Update Product FAQ",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"product_id\": {{product_id}},\n  \"question\": \"What is the shelf life?\",\n  \"answer\": \"Best used within 45 days.\",\n  \"status\": \"active\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{base_url}}/seller/product-faqs/{{product_faq_id}}"
+          }
+        },
+        { "name": "Delete Product FAQ", "request": { "method": "DELETE", "header": [], "url": "{{base_url}}/seller/product-faqs/{{product_faq_id}}" } }
+      ]
+    },
+    {
+      "name": "Tax Classes",
+      "item": [
+        { "name": "List Tax Classes", "request": { "method": "GET", "header": [], "url": "{{base_url}}/seller/tax-classes?page=1&per_page=15&search=" } },
+        { "name": "Show Tax Class", "request": { "method": "GET", "header": [], "url": "{{base_url}}/seller/tax-classes/{{tax_class_id}}" } }
+      ]
+    },
+    {
+      "name": "Brands",
+      "item": [
+        { "name": "List Brands", "request": { "method": "GET", "header": [], "url": "{{base_url}}/seller/brands?page=1&per_page=15&search=" } },
+        { "name": "Show Brand", "request": { "method": "GET", "header": [], "url": "{{base_url}}/seller/brands/{{brand_id}}" } }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        { "name": "List Orders", "request": { "method": "GET", "header": [], "url": "{{base_url}}/seller/orders?page=1&per_page=15&status=&payment_type=&range=&search=&sort_by=id&sort_dir=desc&store_id=" } },
+        { "name": "Order Enums", "request": { "method": "GET", "header": [], "url": "{{base_url}}/seller/orders/enums" } },
+        { "name": "Show Order", "request": { "method": "GET", "header": [], "url": "{{base_url}}/seller/orders/{{seller_order_id}}" } },
+        { "name": "Update Order Item Status", "request": { "method": "POST", "header": [], "url": "{{base_url}}/seller/orders/{{order_item_id}}/{{order_status}}" } }
+      ]
+    },
+    {
+      "name": "Wallet",
+      "item": [
+        { "name": "Show Wallet", "request": { "method": "GET", "header": [], "url": "{{base_url}}/seller/wallet" } },
+        { "name": "List Wallet Transactions", "request": { "method": "GET", "header": [], "url": "{{base_url}}/seller/wallet/transactions?page=1&per_page=15" } },
+        { "name": "Show Wallet Transaction", "request": { "method": "GET", "header": [], "url": "{{base_url}}/seller/wallet/transactions/{{transaction_id}}" } }
+      ]
+    },
+    {
+      "name": "Withdrawals",
+      "item": [
+        { "name": "List Withdrawal Requests", "request": { "method": "GET", "header": [], "url": "{{base_url}}/seller/withdrawals?status=&from_date=&to_date=&per_page=15&sort=created_at&order=desc" } },
+        { "name": "Withdrawal History", "request": { "method": "GET", "header": [], "url": "{{base_url}}/seller/withdrawals/history?from_date=&to_date=&per_page=15&sort=created_at&order=desc" } },
+        {
+          "name": "Create Withdrawal Request",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"amount\": 100,\n  \"note\": \"Weekly payout request\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{base_url}}/seller/withdrawals"
+          }
+        },
+        { "name": "Show Withdrawal Request", "request": { "method": "GET", "header": [], "url": "{{base_url}}/seller/withdrawals/{{withdrawal_id}}" } }
+      ]
+    },
+    {
+      "name": "Commissions",
+      "item": [
+        { "name": "Unsettled Credits", "request": { "method": "GET", "header": [], "url": "{{base_url}}/seller/commissions?page=1&per_page=15&search=&store_id=&sort_by=id&sort_dir=desc" } },
+        { "name": "Unsettled Debits", "request": { "method": "GET", "header": [], "url": "{{base_url}}/seller/commissions/debits?page=1&per_page=15&search=&store_id=&sort_by=id&sort_dir=desc" } },
+        { "name": "Commission History", "request": { "method": "GET", "header": [], "url": "{{base_url}}/seller/commissions/history?page=1&per_page=15&search=&store_id=&sort_by=id&sort_dir=desc" } }
+      ]
+    },
+    {
+      "name": "Roles",
+      "item": [
+        { "name": "List Roles", "request": { "method": "GET", "header": [], "url": "{{base_url}}/seller/roles?page=1&per_page=15" } },
+        { "name": "Role List", "request": { "method": "GET", "header": [], "url": "{{base_url}}/seller/roles/list?search=" } },
+        { "name": "Show Role", "request": { "method": "GET", "header": [], "url": "{{base_url}}/seller/roles/{{role_id}}" } },
+        {
+          "name": "Create Role",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"{{role_name}}\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{base_url}}/seller/roles"
+          }
+        },
+        {
+          "name": "Update Role",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"{{role_name}}\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{base_url}}/seller/roles/{{role_id}}"
+          }
+        },
+        { "name": "Delete Role", "request": { "method": "DELETE", "header": [], "url": "{{base_url}}/seller/roles/{{role_id}}" } }
+      ]
+    },
+    {
+      "name": "Permissions",
+      "item": [
+        { "name": "Get Role Permissions", "request": { "method": "GET", "header": [], "url": "{{base_url}}/seller/permissions/{{role_name}}" } },
+        {
+          "name": "Sync Role Permissions",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"role\": \"{{role_name}}\",\n  \"permissions\": [\n    \"view_products\",\n    \"create_products\"\n  ]\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{base_url}}/seller/permissions"
+          }
+        }
+      ]
+    },
+    {
+      "name": "System Users",
+      "item": [
+        { "name": "List System Users", "request": { "method": "GET", "header": [], "url": "{{base_url}}/seller/system-users?page=1&per_page=15&search=" } },
+        { "name": "Show System User", "request": { "method": "GET", "header": [], "url": "{{base_url}}/seller/system-users/{{system_user_id}}" } },
+        {
+          "name": "Create System User",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Seller Staff\",\n  \"email\": \"staff@example.com\",\n  \"mobile\": \"15557654321\",\n  \"password\": \"password123\",\n  \"roles\": [\n    \"{{role_name}}\"\n  ]\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{base_url}}/seller/system-users"
+          }
+        },
+        {
+          "name": "Update System User",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Seller Staff Updated\",\n  \"mobile\": \"15557654321\",\n  \"roles\": [\n    \"{{role_name}}\"\n  ]\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{base_url}}/seller/system-users/{{system_user_id}}"
+          }
+        },
+        { "name": "Delete System User", "request": { "method": "DELETE", "header": [], "url": "{{base_url}}/seller/system-users/{{system_user_id}}" } }
+      ]
+    }
+  ]
+}

@@ -7,6 +7,10 @@ use ArchTech\Enums\Names;
 use ArchTech\Enums\Values;
 
 /**
+ * @method static ADDON_VIEW()
+ * @method static ADDON_CREATE()
+ * @method static ADDON_EDIT()
+ * @method static ADDON_DELETE()
  * @method static CATEGORY_VIEW()
  * @method static ROLE_PERMISSIONS_VIEW()
  * @method static ROLE_PERMISSIONS_EDIT()
@@ -112,6 +116,11 @@ enum SellerPermissionEnum: string
     case CATEGORY_VIEW = 'category.view';
     case BRAND_VIEW = 'brand.view';
 
+    case ADDON_VIEW = 'addon.view';
+    case ADDON_CREATE = 'addon.create';
+    case ADDON_EDIT = 'addon.edit';
+    case ADDON_DELETE = 'addon.delete';
+
 
     public static function groupedPermissions(): array
     {
@@ -160,6 +169,15 @@ enum SellerPermissionEnum: string
                 'name' => 'Category',
                 'permissions' => [
                     self::CATEGORY_VIEW(),
+                ],
+            ],
+            'addon' => [
+                'name' => 'Addon',
+                'permissions' => [
+                    self::ADDON_VIEW(),
+                    self::ADDON_CREATE(),
+                    self::ADDON_EDIT(),
+                    self::ADDON_DELETE(),
                 ],
             ],
             'brand' => [

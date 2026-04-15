@@ -10,7 +10,7 @@ enum ProductVarificationStatusEnum: string
 {
     use InvokableCases, Values, Names;
 
-    case PENDING = 'pending_verification';
+    case PENDING = 'pending';
     case REJECTED = 'rejected';
     case APPROVED = 'approved';
 }

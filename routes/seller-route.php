@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\AddonController;
 use App\Http\Controllers\GlobalAttributeController;
 use App\Http\Controllers\GlobalAttributeValueController;
 use App\Http\Controllers\NotificationController;
@@ -105,6 +106,18 @@ Route::prefix('seller')->name('seller.')->group(function () {
             Route::delete('/{id}', [CategoryController::class, 'destroy'])->name('delete');
             Route::get('/datatable', [CategoryController::class, 'getCategories'])->name('datatable');
             Route::get('/search', [CategoryController::class, 'search'])->name('search');
+        });
+
+        Route::prefix('addons')->name('addons.')->group(function () {
+            Route::get('/', [AddonController::class, 'index'])->name('index');
+            Route::get('/create', [AddonController::class, 'create'])->name('create');
+            Route::post('/', [AddonController::class, 'store'])->name('store');
+            Route::get('/{id}/edit', [AddonController::class, 'edit'])->name('edit');
+            Route::get('/{id}/show', [AddonController::class, 'show'])->name('show');
+            Route::put('/{id}', [AddonController::class, 'update'])->name('update');
+            Route::delete('/{id}', [AddonController::class, 'destroy'])->name('delete');
+            Route::get('/datatable', [AddonController::class, 'getAddons'])->name('datatable');
+            Route::get('/search', [AddonController::class, 'search'])->name('search');
         });
 
         // taxes

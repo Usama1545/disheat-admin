@@ -30,59 +30,41 @@ class Product extends Model implements HasMedia
 {
     use SoftDeletes, InteractsWithMedia;
 
+    protected $table = 'products';
     protected $appends = ['estimated_delivery_time', 'favorite', 'main_image', 'additional_images'];
 
     protected $fillable = [
         'uuid',
-        'seller_id',
         'category_id',
-        'brand_id',
-        'product_condition_id',
-        'provider',
-        'provider_product_id',
-        'slug',
+        'seller_id',
         'title',
-        'product_identity',
-        'type',
+        'slug',
+        'base_prep_time',
+        'main_image',
+        'additional_images',
+        'image_fit',
         'short_description',
         'description',
-        'indicator',
-        'download_allowed',
-        'download_link',
-        'minimum_order_quantity',
-        'quantity_step_size',
-        'total_allowed_quantity',
-        'is_inclusive_tax',
-        'hsn_code',
-        'is_returnable',
-        'returnable_days',
-        'is_cancelable',
-        'cancelable_till',
-        'is_attachment_required',
-        'base_prep_time',
-        'status',
-        'verification_status',
-        'rejection_reason',
-        'featured',
-        'requires_otp',
-        'video_type',
-        'video_link',
-        'cloned_from_id',
+        'price',
+        'compare_at_price',
+        'cost_per_item',
         'tags',
         'custom_fields',
-        'warranty_period',
-        'guarantee_period',
-        'made_in',
-        'metadata',
-        'image_fit',
+        'is_featured',
+        'verification_status',
         'created_at',
         'updated_at',
     ];
 
     protected $casts = [
-        'metadata' => 'array',
+        'additional_images' => 'array',
+        'tags' => 'array',
         'custom_fields' => 'array',
         'base_prep_time' => 'integer',
+        'price' => 'decimal:2',
+        'compare_at_price' => 'decimal:2',
+        'cost_per_item' => 'decimal:2',
+        'is_featured' => 'boolean',
     ];
 
     /**
@@ -143,18 +125,26 @@ class Product extends Model implements HasMedia
         $deliveryTimePerKm = $this->zone_info['delivery_time_per_km'] ?? 0;
         $bufferTime = $this->zone_info['buffer_time'] ?? 0;
 
+        // For simple products without variants, find the nearest store directly
         $distance = null;
-        // Loop through variants to find the nearest store
-        foreach ($this->variants as $variant) {
-            foreach ($variant->storeProductVariants as $storeProductVariant) {
-                $store = $storeProductVariant->store;
-                if ($store && isset($store->latitude) && isset($store->longitude)) {
-                    $distance = DeliveryZoneService::calculateDistance(
-                        $this->user_latitude,
-                        $this->user_longitude,
-                        $store->latitude,
-                        $store->longitude
-                    );
+        
+        // Find stores selling this product
+        $storeProducts = StoreProduct::where('product_id', $this->id)
+            ->with('store')
+            ->get();
+            
+        foreach ($storeProducts as $storeProduct) {
+            $store = $storeProduct->store;
+            if ($store && isset($store->latitude) && isset($store->longitude)) {
+                $distance = DeliveryZoneService::calculateDistance(
+                    $this->user_latitude,
+                    $this->user_longitude,
+                    $store->latitude,
+                    $store->longitude
+                );
+                // Use the first store found (closest would be better but requires sorting)
+                if ($distance !== null) {
+                    break;
                 }
             }
         }
@@ -163,6 +153,7 @@ class Product extends Model implements HasMedia
         if ($distance === null) {
             return null;
         }
+        
         // Calculate estimated time (in minutes)
         $estimatedTime = $basePrepTime + ($distance * $deliveryTimePerKm) + $bufferTime;
         // Round to the nearest minute
@@ -171,7 +162,7 @@ class Product extends Model implements HasMedia
 
     /**
      * Scope: Apply product-specific filters such as featured, low_stock, out_of_stock.
-     * This reuses the same stock aggregation logic needed by multiple controllers.
+     * Simplified for simple products (no variants).
      */
     public function scopeApplyProductFilter(Builder $query, ?string $filter): Builder
     {
@@ -180,18 +171,17 @@ class Product extends Model implements HasMedia
         }
 
         try {
-            // Stock based filters
+            // Stock based filters - simplified for simple products
             if (in_array($filter, [ProductFilterEnum::LOW_STOCK(), ProductFilterEnum::OUT_OF_STOCK()], true)) {
-                $stockSub = DB::table('product_variants')
-                    ->join('store_product_variants', 'store_product_variants.product_variant_id', '=', 'product_variants.id')
-                    ->select('product_variants.product_id', DB::raw('COALESCE(SUM(store_product_variants.stock), 0) as total_stock'))
-                    ->groupBy('product_variants.product_id');
+                $stockSub = DB::table('store_products')
+                    ->select('product_id', DB::raw('COALESCE(SUM(stock), 0) as total_stock'))
+                    ->groupBy('product_id');
 
                 // Join aggregated stock to products and select base columns
                 $query->leftJoinSub($stockSub, 'product_stock_totals', function ($join) {
-                    $join->on('product_stock_totals.product_id', '=', 'products.id');
+                    $join->on('product_stock_totals.product_id', '=', 'simple_products.id');
                 })
-                    ->select('products.*', DB::raw('COALESCE(product_stock_totals.total_stock, 0) as total_stock'));
+                    ->select('simple_products.*', DB::raw('COALESCE(product_stock_totals.total_stock, 0) as total_stock'));
 
                 if ($filter === ProductFilterEnum::OUT_OF_STOCK()) {
                     $query->whereRaw('COALESCE(product_stock_totals.total_stock, 0) <= 0');
@@ -216,7 +206,7 @@ class Product extends Model implements HasMedia
                     }
                 }
             } elseif ($filter === ProductFilterEnum::FEATURED()) {
-                $query->where('featured', '1');
+                $query->where('is_featured', true);
             }
         } catch (\Throwable $e) {
             // Ignore filter errors to avoid breaking listing endpoints
@@ -232,60 +222,47 @@ class Product extends Model implements HasMedia
             return null; // User isn't authenticated
         }
 
-        $wishlistItem = WishlistItem::with(['wishlist', 'variant', 'store'])
+        $wishlistItems = WishlistItem::with(['wishlist', 'store'])
             ->whereHas('wishlist', function ($query) use ($user) {
                 $query->where('user_id', $user->id);
             })
             ->where('product_id', $this->id)->get();
 
-        if (!$wishlistItem) {
+        if ($wishlistItems->isEmpty()) {
             return null;
         }
-        foreach ($wishlistItem as $item) {
+        
+        $items = [];
+        foreach ($wishlistItems as $item) {
             $items[] = [
                 'id' => $item->id,
                 'wishlist_id' => $item->wishlist_id,
                 'wishlist_title' => $item->wishlist->title,
-                'variant_id' => $item->variant->id ?? null,
-                'variant_name' => $item->variant->name ?? "",
                 'store_id' => $item->store?->id,
                 'store_name' => $item->store?->name,
             ];
         }
-        return $items ?? null;
+        return $items;
     }
 
-    public function getTagsAttribute(): ?array
+    public function getMainImageAttribute(): ?string
     {
-        // Ensure tags are stored as a JSON array in the database
-        if (isset($this->attributes['tags']) && is_string($this->attributes['tags'])) {
-            return json_decode($this->attributes['tags'], true);
-        }
-        return $this->attributes['tags'] ?? [];
-    }
-
-    public
-    function getMainImageAttribute(): ?string
-    {
-        return (!empty($this->getFirstMediaUrl(SpatieMediaCollectionName::PRODUCT_MAIN_IMAGE())) ? $this->getFirstMediaUrl(SpatieMediaCollectionName::PRODUCT_MAIN_IMAGE()) : asset('assets/images/product-placeholder.jpg'));
+        return $this->main_image ?? asset('assets/images/product-placeholder.jpg');
     }
 
     public function orderItems(): HasMany
     {
         return $this->hasMany(OrderItem::class, 'product_id');
     }
+    
     public function cartItems(): HasMany
     {
         return $this->hasMany(CartItem::class, 'product_id');
     }
 
-    public
-    function getAdditionalImagesAttribute(): ?array
+    public function getAdditionalImagesAttribute(): ?array
     {
-        return $this->getMedia(SpatieMediaCollectionName::PRODUCT_ADDITIONAL_IMAGE())
-            ->map(function ($media) {
-                return $media->getUrl();
-            })->toArray();
+        return $this->additional_images ?? [];
     }
 
     public function getItemCountInCartAttribute()
@@ -294,8 +271,7 @@ class Product extends Model implements HasMedia
             ->sum('quantity');
     }
 
-    public
-    function setTitleAttribute($value): void
+    public function setTitleAttribute($value): void
     {
         $this->attributes['title'] = $value;
         $this->attributes['slug'] = generateUniqueSlug(model: self::class, title: $value, id: $this->id ?? null);
@@ -304,140 +280,53 @@ class Product extends Model implements HasMedia
         }
     }
 
-    public
-    function setStatusAttribute($value): void
-    {
-        $this->attributes['status'] = $value;
-    }
-
-    public
-    function setVerificationStatus($value): void
-    {
-        $this->attributes['verification_status'] = $value;
-    }
-
-    public
-    function getVideoLinkAttribute($value)
-    {
-        if ($this->video_type === 'self_hosted') {
-            return $this->getFirstMediaUrl(SpatieMediaCollectionName::PRODUCT_VIDEO());
-        }
-        return $value;
-    }
-
-    public
-    function faqs(): HasMany
+    public function faqs(): HasMany
     {
         return $this->hasMany(ProductFaq::class, 'product_id');
     }
 
-    public
-    function reviews(): HasMany
+    public function reviews(): HasMany
     {
         return $this->hasMany(Review::class, 'product_id');
     }
 
-    public
-    function taxClasses(): BelongsToMany
+    public function taxClasses(): BelongsToMany
     {
         return $this->belongsToMany(TaxClass::class, 'product_taxes')->with('taxRates');
     }
 
-    public
-    function category(): BelongsTo
+    public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
     }
 
-    public
-    function brand(): BelongsTo
-    {
-        return $this->belongsTo(Brand::class);
-    }
-
-    public
-    function productCondition(): BelongsTo
-    {
-        return $this->belongsTo(ProductCondition::class);
-    }
-
-    public
-    function seller(): BelongsTo
+    public function seller(): BelongsTo
     {
         return $this->belongsTo(Seller::class);
     }
 
-    public
-    function variants(): HasMany
+    /**
+     * Get the stores that sell this product
+     */
+    public function stores(): BelongsToMany
     {
-        return $this->hasMany(ProductVariant::class)->orderByDesc('is_default');
-    }
-
-    public
-    function variantAttributes(): HasMany
-    {
-        return $this->hasMany(ProductVariantAttribute::class);
-    }
-
-    public
-    function customProductSections(): HasMany
-    {
-        return $this->hasMany(CustomProductSection::class)->orderBy('sort_order');
+        return $this->belongsToMany(Store::class, 'store_products')
+            ->withPivot('stock', 'price', 'special_price', 'sku')
+            ->withTimestamps();
     }
 
     /**
-     * Get formatted variant attributes grouped by attribute name
-     *
-     * @return array
+     * Get the store product records for this product
      */
-    public
-    function getFormattedVariantAttributes(): array
+    public function storeProducts(): HasMany
     {
-        // Load variant attributes with their relationships
-        $this->load(['variantAttributes.attribute', 'variantAttributes.attributeValue']);
-
-        $attributes = [];
-        $attributeMap = [];
-
-        foreach ($this->variantAttributes as $variantAttribute) {
-            $attribute = $variantAttribute->attribute;
-            $attributeValue = $variantAttribute->attributeValue;
-
-            if (!$attribute || !$attributeValue) {
-                continue;
-            }
-
-            $attributeName = $attribute->title;
-            $attributeSlug = $attribute->slug;
-            $valueTitle = $attributeValue->title;
-            $swatcheValue = $attributeValue->swatche_value;
-
-            // If this attribute is not in our map yet, add it
-            if (!isset($attributeMap[$attributeSlug])) {
-                $attributeMap[$attributeSlug] = count($attributes);
-                $attributes[] = [
-                    'name' => $attributeName,
-                    'slug' => $attributeSlug,
-                    'swatche_type' => $attribute->swatche_type,
-                    'values' => [],
-                    'swatch_values' => []
-                ];
-            }
-
-            // Add the value if it's not already in the array
-            $index = $attributeMap[$attributeSlug];
-            if (!in_array($valueTitle, $attributes[$index]['values'])) {
-                $attributes[$index]['values'][] = $valueTitle;
-                $attributes[$index]['swatch_values'][] = [
-                    'value' => $valueTitle,
-                    'swatch' => $swatcheValue
-                ];
-            }
-        }
-
-        return $attributes;
+        return $this->hasMany(StoreProduct::class, 'product_id');
     }
 
+    public function customProductSections(): HasMany
+    {
+        return $this->hasMany(CustomProductSection::class)->orderBy('sort_order');
+    }
 
     public function scopeApplySorting(Builder $query, ?string $sort, array $storeIds = []): Builder
     {
@@ -446,21 +335,21 @@ class Product extends Model implements HasMedia
         if (!is_null($sort) && $sort !== '') {
             $query->reorder();
         }
+        
         switch ($sort) {
             case 'price_asc':
                 if (empty($storeIds)) {
                     $query->orderBy('id', 'desc');
                     break;
                 }
-                $priceSub = DB::table('product_variants')
-                    ->join('store_product_variants', 'product_variants.id', '=', 'store_product_variants.product_variant_id')
-                    ->whereIn('store_product_variants.store_id', $storeIds)
-                    ->select('product_variants.product_id', DB::raw('MIN(store_product_variants.special_price) as price'))
-                    ->groupBy('product_variants.product_id');
+                $priceSub = DB::table('store_products')
+                    ->whereIn('store_id', $storeIds)
+                    ->select('product_id', DB::raw('MIN(COALESCE(special_price, price)) as min_price'))
+                    ->groupBy('product_id');
 
-                $query->joinSub($priceSub, 'pv_prices', fn($join) => $join->on('pv_prices.product_id', '=', 'products.id'))
-                    ->orderBy('pv_prices.price', 'asc')
-                    ->select('products.*');
+                $query->joinSub($priceSub, 'sp_prices', fn($join) => $join->on('sp_prices.product_id', '=', 'simple_products.id'))
+                    ->orderBy('sp_prices.min_price', 'asc')
+                    ->select('simple_products.*');
                 break;
 
             case 'price_desc':
@@ -468,15 +357,14 @@ class Product extends Model implements HasMedia
                     $query->orderBy('id', 'desc');
                     break;
                 }
-                $priceSub = DB::table('product_variants')
-                    ->join('store_product_variants', 'product_variants.id', '=', 'store_product_variants.product_variant_id')
-                    ->whereIn('store_product_variants.store_id', $storeIds)
-                    ->select('product_variants.product_id', DB::raw('MAX(store_product_variants.special_price) as price'))
-                    ->groupBy('product_variants.product_id');
+                $priceSub = DB::table('store_products')
+                    ->whereIn('store_id', $storeIds)
+                    ->select('product_id', DB::raw('MAX(COALESCE(special_price, price)) as max_price'))
+                    ->groupBy('product_id');
 
-                $query->joinSub($priceSub, 'pv_prices', fn($join) => $join->on('pv_prices.product_id', '=', 'products.id'))
-                    ->orderBy('pv_prices.price', 'desc')
-                    ->select('products.*');
+                $query->joinSub($priceSub, 'sp_prices', fn($join) => $join->on('sp_prices.product_id', '=', 'simple_products.id'))
+                    ->orderBy('sp_prices.max_price', 'desc')
+                    ->select('simple_products.*');
                 break;
 
             case 'avg_rated':
@@ -490,7 +378,7 @@ class Product extends Model implements HasMedia
                 break;
 
             case 'featured':
-                $query->where('featured', 1)->orderBy('id', 'desc');
+                $query->where('is_featured', true)->orderBy('id', 'desc');
                 break;
 
             case 'relevance':
@@ -564,22 +452,12 @@ class Product extends Model implements HasMedia
 
             $query->whereIn('category_id', $categoryIds);
         }
+        
         if (!empty($filter['brands'])) {
             $brandIds = Brand::whereIn('slug', $filter['brands'])->pluck('id')->toArray();
             $query->whereIn('brand_id', $brandIds);
         }
-        // Filter by global attribute value IDs if provided
-        if (!empty($filter['attribute_values'])) {
-            $attrValueIds = is_array($filter['attribute_values'])
-                ? array_values(array_filter(array_map('intval', $filter['attribute_values'])))
-                : [(int)$filter['attribute_values']];
-
-            if (!empty($attrValueIds)) {
-                $query->whereHas('variantAttributes', function ($q) use ($attrValueIds) {
-                    $q->whereIn('global_attribute_value_id', $attrValueIds);
-                });
-            }
-        }
+        
         if (!empty($filter['exclude_product'])) {
             // Support excluding a single slug or multiple slugs
             $exclude = $filter['exclude_product'];
@@ -589,6 +467,7 @@ class Product extends Model implements HasMedia
                 $query->whereNot('slug', $exclude);
             }
         }
+        
         if (!empty($filter['search'])) {
             $searchTerm = $filter['search'];
 
@@ -599,9 +478,6 @@ class Product extends Model implements HasMedia
                     ->orWhere('tags', 'LIKE', "%{$searchTerm}%")
                     ->orWhereHas('category', function ($categoryQuery) use ($searchTerm) {
                         $categoryQuery->where('title', 'LIKE', "%{$searchTerm}%");
-                    })
-                    ->orWhereHas('categories', function ($categoriesQuery) use ($searchTerm) {
-                        $categoriesQuery->where('title', 'LIKE', "%{$searchTerm}%");
                     })
                     ->orWhereHas('brand', function ($brandsQuery) use ($searchTerm) {
                         $brandsQuery->where('title', 'LIKE', "%{$searchTerm}%");
@@ -615,31 +491,26 @@ class Product extends Model implements HasMedia
         $query->applySorting($filter['sort'] ?? null, $storeIds);
 
         return $query->with([
-            'variants' => function ($q) use ($storeIds) {
-                $q->whereHas('storeProductVariants', function ($sq) use ($storeIds) {
-                    $sq->whereIn('store_id', $storeIds);
-                });
+            'storeProducts' => function ($q) use ($storeIds) {
+                $q->whereIn('store_id', $storeIds)->with('store');
             },
-            'variants.storeProductVariants' => function ($q) use ($storeIds) {
-                $q->whereIn('store_id', $storeIds);
-            },
-            'variants.storeProductVariants.store',
-            'variants.attributes.attribute',
-            'variants.attributes.attributeValue',
-            'variantAttributes.attribute',
-            'variantAttributes.attributeValue'
-        ])
-            ->whereHas('variants.storeProductVariants', function ($q) use ($storeIds) {
-                $q->whereIn('store_id', $storeIds);
-            });
+        ])->whereHas('storeProducts', function ($q) use ($storeIds) {
+            $q->whereIn('store_id', $storeIds);
+        });
     }
 
+    /**
+     * Get the brand associated with the product.
+     */
+    public function brand(): BelongsTo
+    {
+        return $this->belongsTo(Brand::class);
+    }
 
     /**
-     * Get the categories associated with the product.
+     * Get the categories associated with the product (for many-to-many if needed).
      */
-    public
-    function categories(): BelongsToMany
+    public function categories(): BelongsToMany
     {
         return $this->belongsToMany(Category::class, 'category_product')
             ->withTimestamps();
@@ -647,12 +518,8 @@ class Product extends Model implements HasMedia
 
     /**
      * Get products by location with pagination
-     *
-     * Note: This method uses the scopeByLocation method through Laravel's dynamic scope feature.
-     * When you call self::byLocation(), Laravel automatically routes to the scopeByLocation() method.
      */
-    public
-    static function getProductsByLocation(float $latitude, float $longitude, int $perPage = 15, array $filter = []): LengthAwarePaginator
+    public static function getProductsByLocation(float $latitude, float $longitude, int $perPage = 15, array $filter = []): LengthAwarePaginator
     {
         // Get zones at the given coordinates
         $zoneInfo = DeliveryZoneService::getZonesAtPoint($latitude, $longitude);
@@ -699,6 +566,7 @@ class Product extends Model implements HasMedia
             $product->user_longitude = $longitude;
             $product->zone_info = $zoneInfo;
         }
+        
         $relatedKeywords = [];
         if (!empty($filter['search'])) {
             $searchTerm = $filter['search'];
@@ -717,7 +585,7 @@ class Product extends Model implements HasMedia
                         return [];
                     }
 
-                    // handle JSON stored tags (e.g. ["mobile","smartphone"])
+                    // handle JSON stored tags
                     if (is_string($tags) && str_starts_with(trim($tags), '[')) {
                         $decoded = json_decode($tags, true);
                         if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
@@ -736,10 +604,12 @@ class Product extends Model implements HasMedia
                 ->values()
                 ->toArray();
         }
+        
         // Attach supplemental data to paginator
         $products->related_keywords = $relatedKeywords;
         $products->category_ids = $categoryIds;
         $products->brand_ids = $brandIds;
+        
         return $products;
     }
 
@@ -747,45 +617,42 @@ class Product extends Model implements HasMedia
     {
         // Get zones at the given coordinates
         $zoneInfo = DeliveryZoneService::getZonesAtPoint($latitude, $longitude);
-        // In Laravel, when you define a method with the prefix 'scope' (like scopeByLocation),
-        // you can call it without the prefix (as just byLocation)
+        
         $product = self::scopeByLocation(zoneInfo: $zoneInfo, query: self::query()->with([
-                'variants.storeProductVariants',
-                'variants.attributes.attribute',
-                'variants.attributes.attributeValue',
-                'variantAttributes.attribute',
-                'variantAttributes.attributeValue',
+                'storeProducts.store',
                 'customProductSections.fields',
+                'category',
+                'brand',
+                'reviews',
+                'faqs',
             ]))
             ->where('id', $id)
             ->where('verification_status', ProductVarificationStatusEnum::APPROVED())
-            ->get()->first();
+            ->first();
+            
         if (!empty($product)) {
             $product->user_latitude = $latitude;
             $product->user_longitude = $longitude;
             $product->zone_info = $zoneInfo;
         }
+        
         return $product;
     }
 
-    protected
-    static function booted(): void
+    protected static function booted(): void
     {
         static::deleting(function ($product) {
-            // Get all variants for the product
-            foreach ($product->variants as $variant) {
-                // Delete attributes related to the variant
-                $variant->attributes()->delete();
-
-                // Delete store product variants related to the variant
-                $variant->storeProductVariants()->delete();
-
-                // Delete the variant itself (will be soft deleted)
-                $variant->delete();
-            }
+            // Delete store product records related to the product
+            $product->storeProducts()->delete();
         });
+        
         static::forceDeleted(function ($product) {
             $product->clearMediaCollection();
         });
+    }
+
+    public function addons(): BelongsToMany
+    {
+        return $this->belongsToMany(Addon::class, 'product_addons')->withTimestamps();
     }
 }

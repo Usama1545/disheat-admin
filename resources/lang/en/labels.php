@@ -1908,6 +1908,11 @@ return [
     'unexpected_error' => 'Unexpected error occurred',
     'upload_failed_generic' => 'Upload failed',
 
+    'addons' => 'Addons',
+    'bulk_upload_addons' => 'Bulk Upload Addons',
+    'select_csv_file' => 'Select CSV File',
+    'add_addon' => 'Add Addon',
+
     // Category Sorting labels (parent categories)
     'sort_categories' => 'Sort Categories',
     'no_categories_found' => 'No categories found',

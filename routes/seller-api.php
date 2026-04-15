@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\Seller\SellerAuthApiController;
-use App\Http\Controllers\Api\Seller\SellerAttributeApiController;
+use App\Http\Controllers\Api\Seller\SellerAddonApiController;
 use App\Http\Controllers\Api\Seller\SellerAttributeValueApiController;
 use App\Http\Controllers\Api\Seller\SellerStoreApiController;
 use App\Http\Controllers\Api\Seller\SellerProductApiController;
@@ -52,12 +52,12 @@ Route::middleware('auth:sanctum')->prefix('seller')->name('seller.api')->group(f
     });
 
     // Attributes CRUD
-    Route::prefix('attributes')->name('attributes.')->group(function () {
-        Route::get('/', [SellerAttributeApiController::class, 'index'])->name('index');
-        Route::get('/{id}', [SellerAttributeApiController::class, 'show'])->name('show');
-        Route::post('/', [SellerAttributeApiController::class, 'store'])->name('store');
-        Route::post('/{id}', [SellerAttributeApiController::class, 'update'])->name('update');
-        Route::delete('/{id}', [SellerAttributeApiController::class, 'destroy'])->name('destroy');
+    Route::prefix('addons')->name('addons.')->group(function () {
+        Route::get('/', [SellerAddonApiController::class, 'index'])->name('index');
+        Route::get('/{id}', [SellerAddonApiController::class, 'show'])->name('show');
+        Route::post('/', [SellerAddonApiController::class, 'store'])->name('store');
+        Route::post('/{id}', [SellerAddonApiController::class, 'update'])->name('update');
+        Route::delete('/{id}', [SellerAddonApiController::class, 'destroy'])->name('destroy');
     });
 
     // Attribute values CRUD

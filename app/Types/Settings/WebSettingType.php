@@ -75,10 +75,10 @@ class WebSettingType implements SettingInterface
             'supportEmail' => 'required|email|max:255',
             'address' => 'required|string|max:255',
             'shortDescription' => 'required|string|max:500',
-            'siteHeaderLogo' => 'required|image|mimes:png,webp',
-            'siteHeaderDarkLogo' => 'required|image|mimes:png,webp',
-            'siteFooterLogo' => 'required|image|mimes:png,webp',
-            'siteFavicon' => 'required|mimes:png,jpg,jpeg,webp,ico',
+            'siteHeaderLogo' => 'required|image|mimes:png,webp,jpeg,jpg,avif',
+            'siteHeaderDarkLogo' => 'required|image|mimes:png,webp,jpeg,jpg,avif',
+            'siteFooterLogo' => 'required|image|mimes:png,webp,jpeg,jpg,avif',
+            'siteFavicon' => 'required|mimes:png,jpg,jpeg,webp,ico,avif',
             'headerScript' => 'nullable|string',
             'footerScript' => 'nullable|string',
             'googleMapKey' => 'nullable|string|max:255',
@@ -118,9 +118,9 @@ class WebSettingType implements SettingInterface
             'aboutUs' => 'nullable|string',
             'pwaName' => 'required|string|max:255',
             'pwaDescription' => 'required|string|max:500',
-            'pwaLogo192x192' => 'nullable|image|mimes:png,jpeg,webp|max:2048',
-            'pwaLogo512x512' => 'nullable|image|mimes:png,jpeg,webp|max:2048',
-            'pwaLogo144x144' => 'nullable|image|mimes:png,jpeg,webp|max:2048',
+            'pwaLogo192x192' => 'nullable|image|mimes:png,jpeg,webp,jpeg,jpg,avif|max:2048',
+            'pwaLogo512x512' => 'nullable|image|mimes:png,jpeg,webp,jpeg,jpg,avif|max:2048',
+            'pwaLogo144x144' => 'nullable|image|mimes:png,jpeg,webp,jpeg,jpg,avif|max:2048',
         ];
     }
 }
