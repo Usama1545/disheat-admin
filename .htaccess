@@ -1,22 +1,9 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
-    ##
-    ## You may need to uncomment (remove #) the following line for some hosting environments,
-    ## if you have installed to a subdirectory, enter the name here also.
-    ## Example: for https://site.com enter: "/", for https://site.com/something enter: "/something/"
-    ##
-    ## RewriteBase /
+    # If request is not already inside /public
+    RewriteCond %{REQUEST_URI} !^/public/
 
-    RewriteCond %{REQUEST_URI}::$1 ^(/.+)/(.*)::\2$
-    RewriteRule ^(.*) - [E=BASE:%1]
-
-    RewriteCond %{REQUEST_URI} !^public
+    # Redirect everything to /public
     RewriteRule ^(.*)$ public/$1 [L]
-
-</IfModule>
-
-<IfModule mod_mime.c>
-  AddType text/javascript mjs
-  AddType text/plain ftl
 </IfModule>
