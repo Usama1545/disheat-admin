@@ -11,7 +11,7 @@ class StoreInventoryLog extends Model
 
     protected $fillable = [
         'store_id',
-        'product_variant_id',
+        'product_id',
         'change_type',
         'quantity',
         'reason',

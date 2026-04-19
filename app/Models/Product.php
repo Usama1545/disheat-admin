@@ -54,6 +54,8 @@ class Product extends Model implements HasMedia
         'verification_status',
         'created_at',
         'updated_at',
+        'store_id',
+        'rejection_reason'
     ];
 
     protected $casts = [
@@ -247,12 +249,21 @@ class Product extends Model implements HasMedia
 
     public function getMainImageAttribute(): ?string
     {
-        return $this->main_image ?? asset('assets/images/product-placeholder.jpg');
+        $image = $this->attributes['main_image'] ?? null;
+
+        return $image
+            ? asset('storage/' . $image)
+            : asset('assets/images/product-placeholder.jpg');
     }
 
     public function orderItems(): HasMany
     {
         return $this->hasMany(OrderItem::class, 'product_id');
+    }
+
+    public function store()
+    {
+        return $this->belongsTo(Store::class, 'store_id');
     }
     
     public function cartItems(): HasMany
@@ -556,7 +567,7 @@ class Product extends Model implements HasMedia
             ->values()
             ->toArray();
 
-        $products = $filteredQuery
+        $products = $filteredQuery->with(['addons', 'addons.options'])
             ->orderBy('title')
             ->paginate($perPage);
 
@@ -625,6 +636,7 @@ class Product extends Model implements HasMedia
                 'brand',
                 'reviews',
                 'faqs',
+                'addons.options'
             ]))
             ->where('id', $id)
             ->where('verification_status', ProductVarificationStatusEnum::APPROVED())

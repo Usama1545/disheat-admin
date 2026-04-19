@@ -110,7 +110,7 @@ class ProductService
     private function createProduct(array $validated): Product
     {
         $productData = [
-            'seller_id' => auth()->user()->id ?? null,
+            'seller_id' => $validated['seller_id'],
             'category_id' => $validated['category_id'],
             'store_id' => $validated['store_id'] ?? null,
             'brand_id' => $validated['brand_id'] ?? null,

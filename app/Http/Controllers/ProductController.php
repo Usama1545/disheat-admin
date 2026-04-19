@@ -101,7 +101,8 @@ class ProductController extends Controller
         $categories = json_encode($categories->toArray());
         $attributes = json_encode($attributes->toArray());
         $addons = json_encode($addons->toArray());
-        return view($this->panelView('products.form'), compact('categories', 'attributes','addons', 'stores'));
+        $selectedAddons = [];
+        return view($this->panelView('products.form'), compact('categories', 'attributes','addons', 'stores', 'selectedAddons'));
     }
 
     /**
@@ -134,7 +135,7 @@ class ProductController extends Controller
      */
     public function show(string $id)
     {
-        $product = Product::with('faqs', 'category', 'brand','addons')->findOrFail($id);
+        $product = Product::with('faqs', 'category', 'brand','addons', 'store')->findOrFail($id);
         if (!$product) {
             abort(404, "Product Not Found");
         }
@@ -144,7 +145,7 @@ class ProductController extends Controller
         $product->load(['faqs', 'category', 'brand','addons']);
         $updateStatusPermission = $this->updateStatusPermission;
 
-        return view($this->panelView('products.show'), compact('product'));
+        return view($this->panelView('products.show'), compact('product', 'updateStatusPermission'));
     }
 
     /**
@@ -342,7 +343,7 @@ class ProductController extends Controller
 
     private function buildBaseQuery(): Builder
     {
-        $query = Product::with(['category', 'seller', 'addons']);
+        $query = Product::with(['category', 'seller', 'addons', 'store']);
 
         if ($this->getPanel() === 'seller') {
             $query->where('seller_id', $this->sellerId);
@@ -404,6 +405,7 @@ class ProductController extends Controller
                 "</div><div>
                         <p class='m-0 fw-medium text-primary'>" . __('labels.title') . ": {$product->title}</p>
                         <p class='m-0'>" . __('labels.featured') . ": " . ($product->featured ? 'Yes' : 'No') . "</p>
+                        <p class='m-0'>" . __('labels.store') . ": " . ($product->store->name ?? '') . "</p>
                         <div class='d-flex gap-1'>" . $productType . " " . $status . "</div>" .
 
                 "</div></div>",

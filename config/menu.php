@@ -402,13 +402,13 @@ return [
             'active' => 'categories',
             'permission' => 'category.view'
         ],
-        'brands' => [
-            'icon' => 'ti-sparkles',
-            'route' => 'seller.brands.index',
-            'title' => 'labels.seller_brands',
-            'active' => 'brands',
-            'permission' => 'brand.view'
-        ],
+        // 'brands' => [
+        //     'icon' => 'ti-sparkles',
+        //     'route' => 'seller.brands.index',
+        //     'title' => 'labels.seller_brands',
+        //     'active' => 'brands',
+        //     'permission' => 'brand.view'
+        // ],
         'addons' => [
             'icon' => 'ti-category-2',
             'route' => 'seller.addons.index',
@@ -416,13 +416,13 @@ return [
             'active' => 'addons',
             'permission' => 'addon.view'
         ],
-        'attributes' => [
-            'icon' => 'ti-tag-starred',
-            'route' => 'seller.attributes.index',
-            'title' => 'labels.attributes',
-            'active' => 'attributes',
-            'permission' => 'attribute.view'
-        ],
+        // 'attributes' => [
+        //     'icon' => 'ti-tag-starred',
+        //     'route' => 'seller.attributes.index',
+        //     'title' => 'labels.attributes',
+        //     'active' => 'attributes',
+        //     'permission' => 'attribute.view'
+        // ],
         'products' => [
             'icon' => 'ti-cube-spark',
             'title' => 'labels.manage_products',

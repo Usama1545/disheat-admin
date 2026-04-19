@@ -294,9 +294,7 @@ class CategoryApiController extends Controller
                     }
                     $q->where('verification_status', ProductVarificationStatusEnum::APPROVED())
                         ->where('status', ProductStatusEnum::ACTIVE())
-                        ->whereHas('variants.storeProductVariants', function ($sq) use ($storeIds) {
-                            $sq->whereIn('store_id', $storeIds);
-                        });
+                        ->whereIn('store_id', $storeIds);
                 }
             ]);
             return;
@@ -326,9 +324,7 @@ class CategoryApiController extends Controller
                 $additionalCount = Product::whereIn('category_id', $subCategoryIds)
                     ->where('verification_status', ProductVarificationStatusEnum::APPROVED())
                     ->where('status', ProductStatusEnum::ACTIVE())
-                    ->whereHas('variants.storeProductVariants', function ($sq) use ($storeIds) {
-                        $sq->whereIn('store_id', $storeIds);
-                    })
+                    ->whereIn('store_id', $storeIds)
                     ->count();
             } else {
                 $additionalCount = Product::whereIn('category_id', $subCategoryIds)->count();

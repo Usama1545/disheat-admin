@@ -317,7 +317,6 @@ class StoreController extends Controller
             }
             $this->authorize('update', $store);
 
-            $store->update($validated);
             if ($request->hasFile('store_logo')) {
                 SpatieMediaService::update($request, $store, SpatieMediaCollectionName::STORE_LOGO());
             }
@@ -327,6 +326,8 @@ class StoreController extends Controller
             if ($isExistInZone['zone_id']) {
                 $store->zones()->sync([$isExistInZone['zone_id']]);
             }
+            $store->update($validated);
+
             event(new StoreUpdated($store));
             DB::commit();
             return ApiResponseType::sendJsonResponse(true, 'Store updated successfully', ['store' => $store]);

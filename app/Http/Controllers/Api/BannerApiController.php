@@ -134,9 +134,7 @@ class BannerApiController extends Controller
                                 // Force no match when no stores in zone
                                 $pq->whereRaw('1 = 0');
                             } else {
-                                $pq->whereHas('variants.storeProductVariants', function ($sq) use ($storeIds) {
-                                    $sq->whereIn('store_id', $storeIds);
-                                });
+                                $pq->whereIn('store_id', $storeIds);
                             }
                         })
                 );
@@ -163,9 +161,7 @@ class BannerApiController extends Controller
                             if (empty($storeIds)) {
                                 $pq->whereRaw('1 = 0');
                             } else {
-                                $pq->whereHas('variants.storeProductVariants', function ($sq) use ($storeIds) {
-                                    $sq->whereIn('store_id', $storeIds);
-                                });
+                                $pq->whereIn('store_id', $storeIds);
                             }
                         })
                 );
@@ -177,16 +173,13 @@ class BannerApiController extends Controller
                 $q->whereExists(
                     Product::query()
                         ->selectRaw('1')
-                        ->whereColumn('products.brand_id', 'banners.brand_id')
                         ->where('verification_status', ProductVarificationStatusEnum::APPROVED())
                         ->where('status', ProductStatusEnum::ACTIVE())
                         ->when($useZoneFilter, function ($pq) use ($storeIds) {
                             if (empty($storeIds)) {
                                 $pq->whereRaw('1 = 0');
                             } else {
-                                $pq->whereHas('variants.storeProductVariants', function ($sq) use ($storeIds) {
-                                    $sq->whereIn('store_id', $storeIds);
-                                });
+                                $pq->whereIn('store_id', $storeIds);
                             }
                         })
                 );

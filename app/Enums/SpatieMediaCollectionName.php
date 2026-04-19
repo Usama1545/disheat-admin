@@ -24,6 +24,16 @@ use ArchTech\Enums\Values;
  * @method static FEATURED_SECTION_BG_TABLET()
  * @method static FEATURED_SECTION_BG_MOBILE()
  * @method static CATEGORY_ICON()
+ * @method static CATEGORY_ACTIVE_ICON()
+ * @method static CATEGORY_BACKGROUND_IMAGE()
+ * @method static CATEGORY_BANNER()
+ * @method static CATEGORY_IMAGE()
+ * @method static BUSINESS_LICENSE()
+ * @method static ARTICLES_OF_INCORPORATION()
+ * @method static NATIONAL_IDENTITY_CARD()
+ * @method static AUTHORIZED_SIGNATURE()
+ * @method static STORE_LOGO()
+ * @method static STORE_BANNER()
  */
 enum SpatieMediaCollectionName: string
 {

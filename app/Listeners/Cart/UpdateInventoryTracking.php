@@ -27,7 +27,7 @@ class UpdateInventoryTracking
         // Log inventory reservation (optional)
         StoreInventoryLog::create([
             'store_id' => $event->cartItem->store_id,
-            'product_variant_id' => $event->cartItem->product_variant_id,
+            'product_id' => $event->cartItem->product_id,
             'change_type' => StockInventoryTypeEnum::ADD(),
             'quantity' => $event->cartItem->quantity,
             'reason' => 'Added to cart by user ' . $event->user->id,
@@ -43,7 +43,7 @@ class UpdateInventoryTracking
         // Log inventory release (optional)
         StoreInventoryLog::create([
             'store_id' => $event->cartItem->store_id,
-            'product_variant_id' => $event->cartItem->product_variant_id,
+            'product_id' => $event->cartItem->product_id,
             'change_type' => StockInventoryTypeEnum::REMOVE(),
             'quantity' => $event->cartItem->quantity,
             'reason' => 'Removed from cart by user ' . $event->user->id,

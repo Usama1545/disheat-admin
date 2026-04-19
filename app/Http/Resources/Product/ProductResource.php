@@ -22,6 +22,7 @@ class ProductResource extends JsonResource
             'seller_id' => $this->seller_id,
             'title' => $this->title,
             'slug' => $this->slug,
+            'price' => $this->price,
             'type' => $this->type,
             'short_description' => $this->short_description,
             'description' => $this->description,
@@ -49,7 +50,7 @@ class ProductResource extends JsonResource
             'cancelable_till' => $this->cancelable_till,
             'is_attachment_required' => (float)$this->is_attachment_required,
             'requires_otp' => (float)$this->requires_otp,
-            'tags' => $this->tags,
+            'tags' => $this->tags ?? [],
             // Dynamic custom fields stored as JSON in DB
             'custom_fields' => $this->custom_fields ?? [],
             'warranty_period' => $this->warranty_period,
@@ -61,14 +62,11 @@ class ProductResource extends JsonResource
             'status' => $this->status,
             'featured' => $this->featured,
             'metadata' => $this->metadata,
+            'addons' => ProductAddonResource::collection($this->addons),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             'seller_ratings' => $stats,
-            'store_status' => optional(
-                    $this->variants->first()?->storeProductVariants->first()?->store
-                )->checkStoreStatus() ?? [],
-            'variants' => ProductVariantResource::collection($this->whenLoaded('variants')),
-            'attributes' => $this->getFormattedVariantAttributes(),
+            'store_status' => $this->store->checkStoreStatus() ,
             // Custom Product Sections with nested fields (including image and pivot sort order)
             'custom_product_sections' => ProductCustomSectionResource::collection(
                 $this->whenLoaded('customProductSections')

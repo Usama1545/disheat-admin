@@ -23,6 +23,7 @@ class SellerProductResource extends JsonResource
             'title' => $this->title,
             'slug' => $this->slug,
             'type' => $this->type,
+            'price' => $this->price,
             'short_description' => $this->short_description,
             'description' => $this->description,
             'category' => $this->category?->slug,
@@ -50,11 +51,12 @@ class SellerProductResource extends JsonResource
             'returnable_days' => $this->returnable_days,
             'is_cancelable' => (float)$this->is_cancelable,
             'cancelable_till' => $this->cancelable_till,
-            'tags' => $this->tags,
+            'tags' => $this->tags !== null ? $this->tags : [],
             'custom_fields' => $this->custom_fields ?? [],
             'warranty_period' => $this->warranty_period,
             'guarantee_period' => $this->guarantee_period,
             'made_in' => $this->made_in,
+            'addons' => ProductAddonResource::collection($this->addons),
             'is_inclusive_tax' => $this->is_inclusive_tax,
             'video_type' => $this->video_type,
             'video_link' => $this->video_link,
@@ -67,8 +69,6 @@ class SellerProductResource extends JsonResource
             'store_status' => optional(
                 $this->variants->first()?->storeProductVariants->first()?->store
             )?->checkStoreStatus() ?? [],
-            'variants' => SellerProductVariantResource::collection($this->whenLoaded('variants')),
-            'attributes' => $this->getFormattedVariantAttributes(),
             // Custom Product Sections with nested fields (including image and pivot sort order)
             'custom_product_sections' => ProductCustomSectionResource::collection(
                 $this->whenLoaded('customProductSections')

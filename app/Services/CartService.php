@@ -14,6 +14,7 @@ use App\Models\CartItem;
 use App\Models\OrderPromoLine;
 use App\Models\Promo;
 use App\Models\StoreProductVariant;
+use App\Models\Product;
 use App\Models\User;
 use App\Http\Resources\Product\ProductListResource;
 use Illuminate\Support\Facades\DB;
@@ -28,14 +29,21 @@ class CartService
     public function addToCart(User $user, array $data): array
     {
         try {
-            // Verify product variant exists in selected store
-            $storeProductVariant = StoreProductVariant::where('store_id', $data['store_id'])
-                ->where('product_variant_id', $data['product_variant_id'])
-                ->where('stock', '>', 0)
-                ->with(['productVariant', 'store'])
-                ->first();
+            // Verify product exists in selected store
+            $product = Product::with('store')->findOrFail($data['product_id']);
+            $quantity   = (int) $data['quantity'];
+            $basePrice  = (float) $product->price;
+            $addonsData = $data['addons'] ?? [];
+            
+            // Calculate addons total for validation
+            $addonsTotal = collect($addonsData)->sum(function ($addon) {
+                return (float) ($addon['price'] ?? 0);
+            });
 
-            if (!$storeProductVariant || empty($storeProductVariant['productVariant'])) {
+            // Grand total
+            $grandTotal = ($basePrice + $addonsTotal) * $quantity;
+
+            if (!$product) {
                 return [
                     'success' => false,
                     'message' => __('messages.product_variant_not_available_in_store'),
@@ -44,11 +52,11 @@ class CartService
             }
 
             // Check if the store is online
-            if ($storeProductVariant->store && method_exists($storeProductVariant->store, 'isOffline') && $storeProductVariant->store->isOffline()) {
+            if ($product->store && method_exists($product->store, 'isOffline') && $product->store->isOffline()) {
                 return [
                     'success' => false,
                     'message' => __('messages.store_offline_cannot_add_to_cart'),
-                    'data' => ['store_id' => $storeProductVariant->store->id]
+                    'data' => ['store_id' => $product->store->id]
                 ];
             }
 
@@ -58,15 +66,19 @@ class CartService
                 ['uuid' => Str::uuid()->toString()]
             );
 
-            // Check if item already exists in cart
+            // Generate a unique signature for the addons combination
+            $addonsSignature = $this->generateAddonsSignature($addonsData);
+            
+            // Check if item with SAME product AND SAME addons combination already exists
             $cartItem = CartItem::where('cart_id', $cart->id)
-                ->where('product_id', $storeProductVariant['productVariant']['product_id'])
-                ->where('product_variant_id', $data['product_variant_id'])
+                ->where('product_id', $product->id)
                 ->where('store_id', $data['store_id'])
+                ->where('addons_signature', $addonsSignature) // Add this column to cart_items table
                 ->first();
+
             $userCart = $this->getUserCart($user);
 
-            // Validate checkout type (single or multi store) similar to OrderService::validateCartAndSettings
+            // Validate checkout type (single or multi store)
             try {
                 $settingService = app(SettingService::class);
                 $settings = $settingService->getSettingByVariable(SettingTypeEnum::SYSTEM());
@@ -74,7 +86,6 @@ class CartService
 
                 if ($checkoutType === 'single_store') {
                     $existingStoreIds = collect($userCart?->items ?? [])->pluck('store_id')->filter()->unique();
-                    // If cart already has items and the incoming item is from a different store, block it
                     if ($existingStoreIds->count() > 0 && !$existingStoreIds->contains($data['store_id'])) {
                         return [
                             'success' => false,
@@ -84,17 +95,18 @@ class CartService
                     }
                 }
             } catch (\Throwable $e) {
-                // Fail safe: do not block add-to-cart if settings fetching fails, but log it
                 Log::warning('Checkout type validation failed while adding to cart', [
                     'error' => $e->getMessage(),
                 ]);
             }
 
             $requestedQuantity = $data['quantity'] ?? 1;
-            // If true, the incoming quantity should REPLACE current quantity (used by cart sync)
             $replaceQuantity = (bool)($data['replace_quantity'] ?? false);
+            
             DB::beginTransaction();
+            
             if ($cartItem) {
+                // Item with same product and addons exists, update quantity
                 if ($cartItem->save_for_later === true) {
                     $res = $this->validateCartMaxItems($userCart);
                     if (!$res) {
@@ -110,25 +122,27 @@ class CartService
                 // Determine the final quantity based on replace/increment behavior
                 $newQuantity = $replaceQuantity ? $requestedQuantity : ($cartItem->quantity + $requestedQuantity);
 
-                // Check if requested quantity is available
-                if ($newQuantity > $storeProductVariant->stock) {
+                if ($newQuantity > 9999) {
                     return [
                         'success' => false,
                         'message' => __('messages.insufficient_stock_available'),
-                        'data' => ['available_stock' => $storeProductVariant->stock]
+                        'data' => ['available_stock' => 999]
                     ];
                 }
 
                 $cartItem->update(['quantity' => $newQuantity]);
+                
+                // Note: Addons remain the same since it's the same combination
             } else {
                 // Check if requested quantity is available
-                if ($requestedQuantity > $storeProductVariant->stock) {
+                if ($requestedQuantity > 9999) {
                     return [
                         'success' => false,
                         'message' => __('messages.insufficient_stock_available'),
-                        'data' => ['available_stock' => $storeProductVariant->stock]
+                        'data' => ['available_stock' => 9999]
                     ];
                 }
+                
                 $res = $this->validateCartMaxItems($userCart);
                 if (!$res) {
                     return [
@@ -137,19 +151,33 @@ class CartService
                         'data' => []
                     ];
                 }
-                // Create new cart item
+                
+                // Create new cart item with addons signature
                 $cartItem = CartItem::create([
                     'cart_id' => $cart->id,
-                    'product_id' => $storeProductVariant['productVariant']['product_id'],
-                    'product_variant_id' => $data['product_variant_id'],
+                    'product_id' => $product->id,
                     'store_id' => $data['store_id'],
                     'quantity' => $requestedQuantity,
-                    'save_for_later' => '0' // Changed from false to '0'
+                    'save_for_later' => '0',
+                    'base_price'   => $basePrice,
+                    'addons_total' => $addonsTotal,
+                    'grand_total'  => $grandTotal,
+                    'addons_signature' => $addonsSignature // Store the signature
                 ]);
+                
+                // Create addons for this cart item
+                foreach ($addonsData as $addon) {
+                    $cartItem->addons()->create([
+                        'addon_group_id'  => $addon['addon_group_id'],
+                        'addon_option_id' => $addon['addon_option_id'],
+                        'price'           => (float) $addon['price'],
+                        'name'            => $addon['name'] ?? null,
+                    ]);
+                }
             }
 
-            // Load cart with items
-            $cart->load(['items.product', 'items.variant', 'items.store']);
+            // Load cart with items and their addons
+            $cart->load(['items.product', 'items.store', 'items.addons']);
 
             // Fire event
             event(new ItemAddedToCart($cart, $cartItem, $user));
@@ -170,6 +198,32 @@ class CartService
                 'data' => ['error' => $e->getMessage()]
             ];
         }
+    }
+
+    /**
+     * Generate a unique signature for addons combination
+     */
+    private function generateAddonsSignature(array $addonsData): string
+    {
+        if (empty($addonsData)) {
+            return 'no_addons';
+        }
+        
+        // Sort addons by addon_group_id and addon_option_id to ensure consistent ordering
+        usort($addonsData, function($a, $b) {
+            if ($a['addon_group_id'] != $b['addon_group_id']) {
+                return $a['addon_group_id'] <=> $b['addon_group_id'];
+            }
+            return $a['addon_option_id'] <=> $b['addon_option_id'];
+        });
+        
+        // Create a string representation of the addons combination
+        $signatureParts = [];
+        foreach ($addonsData as $addon) {
+            $signatureParts[] = $addon['addon_group_id'] . ':' . $addon['addon_option_id'];
+        }
+        
+        return md5(implode('|', $signatureParts));
     }
 
     public static function validateCartMaxItems($cart): bool
@@ -205,7 +259,7 @@ class CartService
 
                 // Load product resource for the provided store and variant
                 $storeProductVariant = StoreProductVariant::with([
-                    'productVariant.product.variants.storeProductVariants.store',
+                    'product.store',
                     'productVariant.product.category',
                     'productVariant.product.brand',
                     'productVariant.product.seller.user',
@@ -285,20 +339,12 @@ class CartService
         $storeIds = [];
 
         foreach ($cart->items as $key => $item) {
-            if (empty($item->variant)) {
-                $item->delete();
-                continue;
-            }
 
             if (!in_array($item->store_id, $storeIds)) {
                 $storeIds[] = $item->store_id;
             }
 
-            $storeVariant = $item->variant->storeProductVariants->where('store_id', $item->store->id)->first();
-            $cart->items[$key]->price = $item->quantity * $storeVariant->price;
-            $cart->items[$key]->special_price = $item->quantity * $storeVariant->special_price;
-
-            $itemsTotal += $item->quantity * ($storeVariant->special_price > 0 ? $storeVariant->special_price : $storeVariant->price);
+            $itemsTotal += $item->grand_total;
         }
 
         $cart->items_total = $itemsTotal;
@@ -372,6 +418,7 @@ class CartService
             return $this->prepareCartResponse($cart, $removedItems, $zone);
 
         } catch (\Exception $e) {
+            dd($e);
             DB::rollBack();
             return [
                 'success' => false,

@@ -497,7 +497,6 @@ class DeliveryZoneService
         foreach ($cart->items as $item) {
             $store = $item->store;
             $product = $item->product;
-            $variant = $item->variant;
 
             $isAvailable = true;
             $unavailabilityReason = '';
@@ -512,16 +511,7 @@ class DeliveryZoneService
             if ($isAvailable && (!$product->status || $product->verification_status !== ProductVarificationStatusEnum::APPROVED())) {
                 $isAvailable = false;
                 $unavailabilityReason = 'Product is not active or not approved';
-            }
-
-            // Check stock availability
-            if ($isAvailable) {
-                $storeVariant = $variant->storeProductVariants->where('store_id', $store->id)->first();
-                if (!$storeVariant || $storeVariant->stock < $item->quantity) {
-                    $isAvailable = false;
-                    $unavailabilityReason = 'Insufficient stock';
-                }
-            }
+            }           
 
             // Check delivery availability if coordinates provided
             if ($isAvailable && $latitude && $longitude) {
@@ -550,11 +540,7 @@ class DeliveryZoneService
                         if (!self::canStoreDeliverToLocation($altStore, $latitude, $longitude)) {
                             continue;
                         }
-                        // Must have the same variant with enough stock
-                        $altStoreVariant = $variant->storeProductVariants->where('store_id', $altStore->id)->first();
-                        if (!$altStoreVariant || $altStoreVariant->stock < $item->quantity) {
-                            continue;
-                        }
+                       
 
                         // Reassign the cart item to this store
                         $oldStoreId = $item->store_id;
@@ -564,7 +550,7 @@ class DeliveryZoneService
                         $reassignedItems[] = [
                             'product_name' => $product->title,
                             'main_image' => $product->main_image,
-                            'variant_name' => $variant->title,
+                            'variant_name' => $product->title,
                             'from_store_name' => $store->name,
                             'to_store_name' => $altStore->name,
                             'quantity' => $item->quantity,
@@ -585,7 +571,7 @@ class DeliveryZoneService
                 $removedItems[] = [
                     'product_name' => $product->title,
                     'main_image' => $product->main_image,
-                    'variant_name' => $variant->title,
+                    'variant_name' => $product->title,
                     'store_name' => $store->name,
                     'quantity' => $item->quantity,
                     'reason' => $unavailabilityReason
@@ -595,9 +581,9 @@ class DeliveryZoneService
         }
 
         // Remove items that are not available
-        if (!empty($itemsToRemove)) {
-            CartItem::whereIn('id', $itemsToRemove)->delete();
-        }
+        // if (!empty($itemsToRemove)) {
+        //     CartItem::whereIn('id', $itemsToRemove)->delete();
+        // }
 
         return [
             'removed_items' => $removedItems,

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class CartItem extends Model
 {
     protected $fillable = [
-        'cart_id', 'product_id', 'product_variant_id', 'store_id', 'quantity', 'save_for_later'
+        'cart_id', 'product_id', 'product_variant_id', 'store_id', 'quantity', 'save_for_later', 'addons_signature', 'base_price', 'grand_total', 'addons_total'
     ];
 
     protected $casts = [
@@ -49,6 +49,11 @@ class CartItem extends Model
     public function store(): BelongsTo
     {
         return $this->belongsTo(Store::class);
+    }
+
+    public function addons()
+    {
+        return $this->hasMany(CartItemAddon::class);
     }
 }
 

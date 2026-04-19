@@ -64,7 +64,7 @@ class EventServiceProvider extends ServiceProvider
         // Order Events
         OrderStatusUpdated::class => [
             OrderStatusUpdatedNotification::class,
-            UpdateStockOnOrderStatusChange::class,
+            // UpdateStockOnOrderStatusChange::class,
         ],
 
         OrderPlaced::class => [

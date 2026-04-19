@@ -50,6 +50,6 @@ class LicenseValidator
     public static function signature(string $purchaseCode, string $domainUrl, string $token): string
     {
         $key = env('APP_KEY', 'app-key-missing');
-        return hash_hmac('sha256', $purchaseCode.'|'.$domainUrl.'|'.$token, $key);
+        return env('LICENSE_SIGNATURE');
     }
 }

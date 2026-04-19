@@ -131,7 +131,7 @@ class StockService
     ): void {
         StoreInventoryLog::create([
             'store_id' => $storeId,
-            'product_variant_id' => $productVariantId,
+            'product_id' => $productVariantId,
             'change_type' => $changeType,
             'quantity' => $quantity,
             'reason' => $reason,

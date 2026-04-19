@@ -81,8 +81,11 @@ class Store extends Model implements HasMedia
 
     public function setNameAttribute($value): void
     {
+        if (!isset($this->attributes['name']) || $this->attributes['name'] !== $value) {
+            $this->attributes['slug'] = generateUniqueSlug(self::class, $value);
+        }
+
         $this->attributes['name'] = $value;
-        $this->attributes['slug'] = generateUniqueSlug(self::class, $value);
     }
 
     public function getDistanceAttribute()
@@ -132,18 +135,13 @@ class Store extends Model implements HasMedia
     public function getProductCountAttribute(): int
     {
         $storeId = $this->id ?? 0;
-        return Product::whereHas('variants.storeProductVariants', function ($q) use ($storeId) {
-            $q->where('store_id', $storeId);
-        })->count();
+        return Product::where('store_id', $storeId)->count();
     }
 
     // get store all product avg rating
     public function getAvgProductsRatingAttribute()
     {
-        return Review::whereHas('product.variants.storeProductVariants', function ($q) {
-            $q->where('store_id', $this->id);
-        })
-            ->avg('rating');
+        return Review::where('store_id', $this->id)->avg('rating');
     }
 
     public function getAvgStoreRatingAttribute()

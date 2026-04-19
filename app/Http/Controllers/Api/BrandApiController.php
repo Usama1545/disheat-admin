@@ -82,9 +82,7 @@ class BrandApiController extends Controller
                     }
                     $q->where('verification_status', ProductVarificationStatusEnum::APPROVED())
                         ->where('status', ProductStatusEnum::ACTIVE())
-                        ->whereHas('variants.storeProductVariants', function ($sq) use ($storeIds) {
-                            $sq->whereIn('store_id', $storeIds);
-                        });
+                        ->whereIn('store_id', $storeIds);
                 }
             ]);
         } else {
@@ -168,9 +166,7 @@ class BrandApiController extends Controller
                     }
                     $q->where('verification_status', ProductVarificationStatusEnum::APPROVED())
                         ->where('status', ProductStatusEnum::ACTIVE())
-                        ->whereHas('variants.storeProductVariants', function ($sq) use ($storeIds) {
-                            $sq->whereIn('store_id', $storeIds);
-                        });
+                        ->whereIn('store_id', $storeIds);
                 }
             ]);
         } else {

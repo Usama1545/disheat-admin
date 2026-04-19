@@ -16,8 +16,6 @@ class CartItemResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $variantPricing = $this->variant->storeProductVariants->where('store_id', $this->store_id)->first();
-        $storeVariant = $this->variant->storeProductVariants->where('store_id', $this->store_id)->first();
         $reviews = Review::scopeProductRatingStats($this->product->id);
         if (isset($request->latitude) && isset($request->longitude)) {
             $this->product->user_latitude = $request->latitude;
@@ -28,7 +26,6 @@ class CartItemResource extends JsonResource
             'id' => $this->id,
             'cart_id' => $this->cart_id,
             'product_id' => $this->product_id,
-            'product_variant_id' => $this->product_variant_id,
             'store_id' => $this->store_id,
             'quantity' => $this->quantity,
             'save_for_later' => $this->save_for_later,
@@ -36,26 +33,15 @@ class CartItemResource extends JsonResource
                 'id' => $this->product->id,
                 'name' => $this->product->title,
                 'slug' => $this->product->slug,
-                'minimum_order_quantity' => $this->product->minimum_order_quantity,
-                'quantity_step_size' => $this->product->quantity_step_size,
-                'total_allowed_quantity' => $this->product->total_allowed_quantity,
-                'is_attachment_required' => $this->product->is_attachment_required == "1" ? true : false,
+                
                 'image' => $this->product->main_image ?? null,
                 'estimated_delivery_time' => $this->product->estimated_delivery_time,
                 'image_fit' => $this->product->image_fit,
-                'store_status' => $this->product->variants->first()->storeProductVariants->first()->store->checkStoreStatus() ?? [],
+                'store_status' => $this->product->store->checkStoreStatus() ?? [],
                 'ratings' => $reviews['average_rating'] ?? 0,
                 'rating_count' => $reviews['total_reviews'] ?? 0,
-            ],
-            'variant' => [
-                'id' => $this->variant->id,
-                'title' => $this->variant->title,
-                'slug' => $this->variant->slug,
-                'image' => $this->variant->image ?? null,
-                'price' => $variantPricing?->price ?? 0,
-                'special_price' => $variantPricing?->special_price ?? 0,
-                'stock' => $storeVariant?->stock ?? 0,
-                'sku' => $storeVariant?->sku ?? null,
+                'compare_at_price' => $this->product->compare_at_price,
+                'price' => $this->product->price,
             ],
             'store' => [
                 'id' => $this->store->id,
@@ -66,6 +52,7 @@ class CartItemResource extends JsonResource
                         $this->store
                     )->checkStoreStatus() ?? [],
             ],
+            'addons' => $this->addons,
             'created_at' => $this->created_at?->format('Y-m-d H:i:s'),
             'updated_at' => $this->updated_at?->format('Y-m-d H:i:s')
         ];
