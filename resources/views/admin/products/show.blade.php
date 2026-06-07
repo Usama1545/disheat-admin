@@ -197,43 +197,40 @@
 
 
                     <!-- Product Verification Status Card -->
-                    @if ($updateStatusPermission ?? false)
-                        <div class="col-12 col-lg-6">
-                            <div class="card">
-                                <div class="card-header">
-                                    <h3 class="card-title">Admin Approval</h3>
-                                </div>
-                                <div class="card-body">
-                                    <form class="form-submit" method="POST"
-                                        action="{{ route('admin.products.update-verification-status', $product->id) }}">
-                                        @csrf
-                                        <div class="mb-3">
-                                            <label class="form-label">Verification Status</label>
-                                            <select class="form-select" name="verification_status"
-                                                id="verification_status">
-                                                @foreach (ProductVarificationStatusEnum::values() as $vs)
-                                                    <option value="{{ $vs }}"
-                                                        {{ $product->verification_status === $vs ? 'selected' : '' }}>
-                                                        {{ Str::title(str_replace('_', ' ', $vs)) }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                        <div class="mb-3" id="rejection-reason-wrapper"
-                                            style="display: {{ $product->verification_status === ProductVarificationStatusEnum::REJECTED() ? 'block' : 'none' }};">
-                                            <label class="form-label">Rejection Reason</label>
-                                            <textarea class="form-control" name="rejection_reason" id="rejection_reason" rows="3"
-                                                placeholder="Enter rejection reason">{{ old('rejection_reason', $product->rejection_reason) }}</textarea>
-                                        </div>
-                                        <button type="submit" class="btn btn-primary" id="update-verification-status">
-                                            Update
-                                            Status
-                                        </button>
-                                    </form>
-                                    <div class="mt-2" id="verification-status-result" style="display:none;"></div>
-                                </div>
+                    <div class="col-12 col-lg-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">Admin Approval</h3>
+                            </div>
+                            <div class="card-body">
+                                <form class="form-submit" method="POST"
+                                    action="{{ route('admin.products.update-verification-status', $product->id) }}">
+                                    @csrf
+                                    <div class="mb-3">
+                                        <label class="form-label">Verification Status</label>
+                                        <select class="form-select" name="verification_status" id="verification_status">
+                                            @foreach (ProductVarificationStatusEnum::values() as $vs)
+                                                <option value="{{ $vs }}"
+                                                    {{ $product->verification_status === $vs ? 'selected' : '' }}>
+                                                    {{ Str::title(str_replace('_', ' ', $vs)) }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="mb-3" id="rejection-reason-wrapper"
+                                        style="display: {{ $product->verification_status === ProductVarificationStatusEnum::REJECTED() ? 'block' : 'none' }};">
+                                        <label class="form-label">Rejection Reason</label>
+                                        <textarea class="form-control" name="rejection_reason" id="rejection_reason" rows="3"
+                                            placeholder="Enter rejection reason">{{ old('rejection_reason', $product->rejection_reason) }}</textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary" id="update-verification-status">
+                                        Update
+                                        Status
+                                    </button>
+                                </form>
+                                <div class="mt-2" id="verification-status-result" style="display:none;"></div>
                             </div>
                         </div>
-                    @endif
+                    </div>
                     <!-- Product Image Card -->
                     <div class="col-12 col-lg-6">
                         <div class="card">

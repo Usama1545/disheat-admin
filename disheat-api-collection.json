@@ -1,0 +1,2098 @@
+{
+  "info": {
+    "name": "Disheat - Food Delivery API",
+    "_postman_id": "disheat-food-delivery-api",
+    "description": "Customer-facing API collection for Disheat food delivery platform.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8000/api", "type": "string" },
+    { "key": "auth_token", "value": "", "type": "string" }
+  ],
+  "item": [
+
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var r = pm.response.json();",
+                  "if (r.access_token) pm.collectionVariables.set('auth_token', r.access_token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"mobile\": \"923001234567\",\n  \"password\": \"password123\",\n  \"password_confirmation\": \"password123\",\n  \"country\": \"Pakistan\",\n  \"iso_2\": \"PK\",\n  \"fcm_token\": \"your-fcm-token\",\n  \"device_type\": \"android\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/register",
+              "host": ["{{base_url}}"],
+              "path": ["register"]
+            }
+          }
+        },
+        {
+          "name": "Login (Email)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var r = pm.response.json();",
+                  "if (r.access_token) pm.collectionVariables.set('auth_token', r.access_token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\",\n  \"fcm_token\": \"your-fcm-token\",\n  \"device_type\": \"android\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/login",
+              "host": ["{{base_url}}"],
+              "path": ["login"]
+            }
+          }
+        },
+        {
+          "name": "Login (Mobile)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var r = pm.response.json();",
+                  "if (r.access_token) pm.collectionVariables.set('auth_token', r.access_token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mobile\": \"923001234567\",\n  \"password\": \"password123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/login",
+              "host": ["{{base_url}}"],
+              "path": ["login"]
+            }
+          }
+        },
+        {
+          "name": "Forget Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@example.com\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/forget-password",
+              "host": ["{{base_url}}"],
+              "path": ["forget-password"]
+            }
+          }
+        },
+        {
+          "name": "Verify User",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"email\",\n  \"value\": \"john@example.com\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/verify-user",
+              "host": ["{{base_url}}"],
+              "path": ["verify-user"]
+            },
+            "description": "Check if a user exists before login/registration. type: 'email' or 'mobile'"
+          }
+        },
+        {
+          "name": "Google Callback (Firebase)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idToken\": \"firebase-google-id-token\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/google/callback",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "google", "callback"]
+            },
+            "description": "Step 1: send idToken only. If user exists → returns access_token. If new user → returns new_user:true with name+email. Step 2 (new user): resend with mobile + password + password_confirmation."
+          }
+        },
+        {
+          "name": "Apple Callback (Firebase)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idToken\": \"firebase-apple-id-token\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/apple/callback",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "apple", "callback"]
+            }
+          }
+        },
+        {
+          "name": "Phone OTP Callback (Firebase)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idToken\": \"firebase-phone-id-token\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/phone/callback",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "phone", "callback"]
+            },
+            "description": "User must already be registered with a matching mobile number."
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/logout",
+              "host": ["{{base_url}}"],
+              "path": ["logout"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Settings",
+      "item": [
+        {
+          "name": "Get All Settings",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/settings",
+              "host": ["{{base_url}}"],
+              "path": ["settings"]
+            }
+          }
+        },
+        {
+          "name": "Get Firebase Config",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/settings/firebase-config",
+              "host": ["{{base_url}}"],
+              "path": ["settings", "firebase-config"]
+            }
+          }
+        },
+        {
+          "name": "Get Setting Variables",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/settings/variables",
+              "host": ["{{base_url}}"],
+              "path": ["settings", "variables"]
+            }
+          }
+        },
+        {
+          "name": "Get Single Setting",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/settings/system",
+              "host": ["{{base_url}}"],
+              "path": ["settings", "system"]
+            },
+            "description": "Replace 'system' with the setting slug: system | authentication | payment"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Banners",
+      "item": [
+        {
+          "name": "Get Banners",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/banners",
+              "host": ["{{base_url}}"],
+              "path": ["banners"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Categories",
+      "item": [
+        {
+          "name": "Get All Categories",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/categories",
+              "host": ["{{base_url}}"],
+              "path": ["categories"]
+            }
+          }
+        },
+        {
+          "name": "Get Sub-Categories",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/categories/sub-categories",
+              "host": ["{{base_url}}"],
+              "path": ["categories", "sub-categories"]
+            }
+          }
+        },
+        {
+          "name": "Get Sidebar Categories",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/categories/sidebar",
+              "host": ["{{base_url}}"],
+              "path": ["categories", "sidebar"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Brands",
+      "item": [
+        {
+          "name": "Get All Brands",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/brands",
+              "host": ["{{base_url}}"],
+              "path": ["brands"]
+            }
+          }
+        },
+        {
+          "name": "Get Sidebar Brands",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/brands/sidebar",
+              "host": ["{{base_url}}"],
+              "path": ["brands", "sidebar"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Stores",
+      "item": [
+        {
+          "name": "Get All Stores",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/stores?page=1&per_page=15",
+              "host": ["{{base_url}}"],
+              "path": ["stores"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "per_page", "value": "15" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Single Store",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/stores/pizza-palace",
+              "host": ["{{base_url}}"],
+              "path": ["stores", "pizza-palace"]
+            },
+            "description": "Replace 'pizza-palace' with the actual store slug."
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Delivery Zones",
+      "item": [
+        {
+          "name": "Get All Zones",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/delivery-zone",
+              "host": ["{{base_url}}"],
+              "path": ["delivery-zone"]
+            }
+          }
+        },
+        {
+          "name": "Check Delivery Availability",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/delivery-zone/check?latitude=33.6844&longitude=73.0479",
+              "host": ["{{base_url}}"],
+              "path": ["delivery-zone", "check"],
+              "query": [
+                { "key": "latitude", "value": "33.6844" },
+                { "key": "longitude", "value": "73.0479" }
+              ]
+            },
+            "description": "Check if a lat/lng falls inside a configured delivery zone."
+          }
+        },
+        {
+          "name": "Get Stores by Location",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/delivery-zone/stores?latitude=33.6844&longitude=73.0479",
+              "host": ["{{base_url}}"],
+              "path": ["delivery-zone", "stores"],
+              "query": [
+                { "key": "latitude", "value": "33.6844" },
+                { "key": "longitude", "value": "73.0479" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Products by Location",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/delivery-zone/products?latitude=33.6844&longitude=73.0479&page=1&per_page=20",
+              "host": ["{{base_url}}"],
+              "path": ["delivery-zone", "products"],
+              "query": [
+                { "key": "latitude", "value": "33.6844" },
+                { "key": "longitude", "value": "73.0479" },
+                { "key": "page", "value": "1" },
+                { "key": "per_page", "value": "20" }
+              ]
+            },
+            "description": "Main product listing filtered by delivery zone from user coordinates."
+          }
+        },
+        {
+          "name": "Get Single Zone",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/delivery-zone/1",
+              "host": ["{{base_url}}"],
+              "path": ["delivery-zone", "1"]
+            }
+          }
+        },
+        {
+          "name": "Get Stores by Map Bounds",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"north\": 33.75,\n  \"south\": 33.60,\n  \"east\": 73.15,\n  \"west\": 72.95\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/stores/map",
+              "host": ["{{base_url}}"],
+              "path": ["stores", "map"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "Get Sidebar Filters",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/products/sidebar-filters",
+              "host": ["{{base_url}}"],
+              "path": ["products", "sidebar-filters"]
+            }
+          }
+        },
+        {
+          "name": "Get Product Types",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/products/get-types",
+              "host": ["{{base_url}}"],
+              "path": ["products", "get-types"]
+            }
+          }
+        },
+        {
+          "name": "Search by Keywords",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/products/search-by-keywords?keyword=burger&latitude=33.6844&longitude=73.0479",
+              "host": ["{{base_url}}"],
+              "path": ["products", "search-by-keywords"],
+              "query": [
+                { "key": "keyword", "value": "burger" },
+                { "key": "latitude", "value": "33.6844" },
+                { "key": "longitude", "value": "73.0479" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Products Store-wise",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/products/store-wise?store_id=1",
+              "host": ["{{base_url}}"],
+              "path": ["products", "store-wise"],
+              "query": [
+                { "key": "store_id", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Single Product",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/products/chicken-burger",
+              "host": ["{{base_url}}"],
+              "path": ["products", "chicken-burger"]
+            },
+            "description": "Replace 'chicken-burger' with the actual product slug."
+          }
+        },
+        {
+          "name": "Get Product FAQs",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/products/chicken-burger/faqs",
+              "host": ["{{base_url}}"],
+              "path": ["products", "chicken-burger", "faqs"]
+            }
+          }
+        },
+        {
+          "name": "Get Product Reviews",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/products/chicken-burger/reviews",
+              "host": ["{{base_url}}"],
+              "path": ["products", "chicken-burger", "reviews"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Featured Sections",
+      "item": [
+        {
+          "name": "Get Featured Sections (paginated)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/featured-sections",
+              "host": ["{{base_url}}"],
+              "path": ["featured-sections"]
+            }
+          }
+        },
+        {
+          "name": "Get All Featured Sections",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/featured-sections/all",
+              "host": ["{{base_url}}"],
+              "path": ["featured-sections", "all"]
+            }
+          }
+        },
+        {
+          "name": "Get Featured Section Types",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/featured-sections/types",
+              "host": ["{{base_url}}"],
+              "path": ["featured-sections", "types"]
+            }
+          }
+        },
+        {
+          "name": "Get Single Featured Section",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/featured-sections/top-picks",
+              "host": ["{{base_url}}"],
+              "path": ["featured-sections", "top-picks"]
+            },
+            "description": "Replace 'top-picks' with the actual section slug."
+          }
+        },
+        {
+          "name": "Get Featured Section Products",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/featured-sections/top-picks/products",
+              "host": ["{{base_url}}"],
+              "path": ["featured-sections", "top-picks", "products"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "FAQs",
+      "item": [
+        {
+          "name": "Get All FAQs",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/faqs",
+              "host": ["{{base_url}}"],
+              "path": ["faqs"]
+            }
+          }
+        },
+        {
+          "name": "Get Single FAQ",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/faqs/1",
+              "host": ["{{base_url}}"],
+              "path": ["faqs", "1"]
+            }
+          }
+        },
+        {
+          "name": "Get All Product FAQs",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/product-faqs",
+              "host": ["{{base_url}}"],
+              "path": ["product-faqs"]
+            }
+          }
+        },
+        {
+          "name": "Get Single Product FAQ",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/product-faqs/1",
+              "host": ["{{base_url}}"],
+              "path": ["product-faqs", "1"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Reviews",
+      "item": [
+        {
+          "name": "Get All Reviews",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/reviews?page=1&per_page=15",
+              "host": ["{{base_url}}"],
+              "path": ["reviews"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "per_page", "value": "15" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Single Review",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/reviews/1",
+              "host": ["{{base_url}}"],
+              "path": ["reviews", "1"]
+            }
+          }
+        },
+        {
+          "name": "Get Available Products for Review",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/reviews/available-for-review",
+              "host": ["{{base_url}}"],
+              "path": ["reviews", "available-for-review"]
+            },
+            "description": "Returns delivered order items the authenticated user can review."
+          }
+        },
+        {
+          "name": "Submit Review",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": 1,\n  \"rating\": 5,\n  \"comment\": \"Delicious food, fast delivery!\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/reviews",
+              "host": ["{{base_url}}"],
+              "path": ["reviews"]
+            }
+          }
+        },
+        {
+          "name": "Update Review",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 4,\n  \"comment\": \"Updated: still great food!\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/reviews/1",
+              "host": ["{{base_url}}"],
+              "path": ["reviews", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete Review",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/reviews/1",
+              "host": ["{{base_url}}"],
+              "path": ["reviews", "1"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Seller Feedback",
+      "item": [
+        {
+          "name": "Get All Feedback",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/seller-feedback",
+              "host": ["{{base_url}}"],
+              "path": ["seller-feedback"]
+            }
+          }
+        },
+        {
+          "name": "Get Seller Ratings",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/seller-feedback/ratings",
+              "host": ["{{base_url}}"],
+              "path": ["seller-feedback", "ratings"]
+            }
+          }
+        },
+        {
+          "name": "Get Single Feedback",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/seller-feedback/1",
+              "host": ["{{base_url}}"],
+              "path": ["seller-feedback", "1"]
+            }
+          }
+        },
+        {
+          "name": "Submit Feedback",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"seller_id\": 1,\n  \"rating\": 5,\n  \"comment\": \"Excellent restaurant!\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/seller-feedback",
+              "host": ["{{base_url}}"],
+              "path": ["seller-feedback"]
+            }
+          }
+        },
+        {
+          "name": "Update Feedback",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 4,\n  \"comment\": \"Updated feedback.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/seller-feedback/1",
+              "host": ["{{base_url}}"],
+              "path": ["seller-feedback", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete Feedback",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/seller-feedback/1",
+              "host": ["{{base_url}}"],
+              "path": ["seller-feedback", "1"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "User — Profile",
+      "item": [
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/profile",
+              "host": ["{{base_url}}"],
+              "path": ["user", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name", "value": "John Updated", "type": "text" },
+                { "key": "profile_image", "type": "file", "src": "", "description": "Optional. JPEG/PNG/WebP, max 2MB" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/user/profile",
+              "host": ["{{base_url}}"],
+              "path": ["user", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"current_password\": \"password123\",\n  \"password\": \"newpassword123\",\n  \"password_confirmation\": \"newpassword123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/user/change-password",
+              "host": ["{{base_url}}"],
+              "path": ["user", "change-password"]
+            }
+          }
+        },
+        {
+          "name": "Delete Account",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/delete-account",
+              "host": ["{{base_url}}"],
+              "path": ["user", "delete-account"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "User — Addresses",
+      "item": [
+        {
+          "name": "List Addresses",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/addresses?page=1&per_page=15",
+              "host": ["{{base_url}}"],
+              "path": ["user", "addresses"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "per_page", "value": "15" },
+                { "key": "address_type", "value": "home", "disabled": true },
+                { "key": "city", "value": "Karachi", "disabled": true },
+                { "key": "query", "value": "main street", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Address",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"address_line1\": \"123 Main Street\",\n  \"address_line2\": \"Apartment 4B\",\n  \"city\": \"Karachi\",\n  \"landmark\": \"Near Central Mall\",\n  \"state\": \"Sindh\",\n  \"zipcode\": \"74200\",\n  \"mobile\": \"923001234567\",\n  \"address_type\": \"home\",\n  \"country\": \"Pakistan\",\n  \"country_code\": \"PK\",\n  \"latitude\": 24.8607,\n  \"longitude\": 67.0011\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/user/addresses",
+              "host": ["{{base_url}}"],
+              "path": ["user", "addresses"]
+            },
+            "description": "address_type: home | work | other. Coordinates must fall inside a configured delivery zone or the request will fail."
+          }
+        },
+        {
+          "name": "Get Single Address",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/addresses/1",
+              "host": ["{{base_url}}"],
+              "path": ["user", "addresses", "1"]
+            }
+          }
+        },
+        {
+          "name": "Update Address",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"address_line1\": \"456 New Street\",\n  \"city\": \"Lahore\",\n  \"state\": \"Punjab\",\n  \"zipcode\": \"54000\",\n  \"mobile\": \"923001234567\",\n  \"address_type\": \"work\",\n  \"country\": \"Pakistan\",\n  \"country_code\": \"PK\",\n  \"latitude\": 31.5204,\n  \"longitude\": 74.3587\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/user/addresses/1",
+              "host": ["{{base_url}}"],
+              "path": ["user", "addresses", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete Address",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/addresses/1",
+              "host": ["{{base_url}}"],
+              "path": ["user", "addresses", "1"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "User — Notifications",
+      "item": [
+        {
+          "name": "List Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/notifications",
+              "host": ["{{base_url}}"],
+              "path": ["user", "notifications"]
+            }
+          }
+        },
+        {
+          "name": "Get Unread Count",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/notifications/unread-count",
+              "host": ["{{base_url}}"],
+              "path": ["user", "notifications", "unread-count"]
+            }
+          }
+        },
+        {
+          "name": "Mark All as Read",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/notifications/mark-all-read",
+              "host": ["{{base_url}}"],
+              "path": ["user", "notifications", "mark-all-read"]
+            }
+          }
+        },
+        {
+          "name": "Mark as Read",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/notifications/1/read",
+              "host": ["{{base_url}}"],
+              "path": ["user", "notifications", "1", "read"]
+            }
+          }
+        },
+        {
+          "name": "Mark as Unread",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/notifications/1/unread",
+              "host": ["{{base_url}}"],
+              "path": ["user", "notifications", "1", "unread"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "User — Wallet",
+      "item": [
+        {
+          "name": "Get Wallet",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/wallet",
+              "host": ["{{base_url}}"],
+              "path": ["user", "wallet"]
+            }
+          }
+        },
+        {
+          "name": "Prepare Wallet Recharge",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 500,\n  \"payment_method\": \"stripe\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/user/wallet/prepare-wallet-recharge",
+              "host": ["{{base_url}}"],
+              "path": ["user", "wallet", "prepare-wallet-recharge"]
+            }
+          }
+        },
+        {
+          "name": "Deduct Balance",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 100,\n  \"description\": \"Manual deduction\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/user/wallet/deduct-balance",
+              "host": ["{{base_url}}"],
+              "path": ["user", "wallet", "deduct-balance"]
+            }
+          }
+        },
+        {
+          "name": "List Wallet Transactions",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/wallet/transactions",
+              "host": ["{{base_url}}"],
+              "path": ["user", "wallet", "transactions"]
+            }
+          }
+        },
+        {
+          "name": "Get Wallet Transaction",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/wallet/transactions/1",
+              "host": ["{{base_url}}"],
+              "path": ["user", "wallet", "transactions", "1"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "User — Wishlist",
+      "item": [
+        {
+          "name": "List Wishlists",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/wishlists",
+              "host": ["{{base_url}}"],
+              "path": ["user", "wishlists"]
+            }
+          }
+        },
+        {
+          "name": "Get Wishlist Titles",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/wishlists/titles",
+              "host": ["{{base_url}}"],
+              "path": ["user", "wishlists", "titles"]
+            }
+          }
+        },
+        {
+          "name": "Add to Wishlist",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": 1,\n  \"wishlist_id\": null,\n  \"name\": \"My Favourites\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/user/wishlists",
+              "host": ["{{base_url}}"],
+              "path": ["user", "wishlists"]
+            },
+            "description": "Creates a new wishlist when wishlist_id is null, then adds the product. Pass an existing wishlist_id to add to it."
+          }
+        },
+        {
+          "name": "Create Wishlist (no item)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Friday Night Picks\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/user/wishlists/create",
+              "host": ["{{base_url}}"],
+              "path": ["user", "wishlists", "create"]
+            }
+          }
+        },
+        {
+          "name": "Get Single Wishlist",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/wishlists/1",
+              "host": ["{{base_url}}"],
+              "path": ["user", "wishlists", "1"]
+            }
+          }
+        },
+        {
+          "name": "Update Wishlist",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"My Updated Wishlist\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/user/wishlists/1",
+              "host": ["{{base_url}}"],
+              "path": ["user", "wishlists", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete Wishlist",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/wishlists/1",
+              "host": ["{{base_url}}"],
+              "path": ["user", "wishlists", "1"]
+            }
+          }
+        },
+        {
+          "name": "Remove Item from Wishlist",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/wishlists/items/1",
+              "host": ["{{base_url}}"],
+              "path": ["user", "wishlists", "items", "1"]
+            }
+          }
+        },
+        {
+          "name": "Move Item to Another Wishlist",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"target_wishlist_id\": 2\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/user/wishlists/items/1/move",
+              "host": ["{{base_url}}"],
+              "path": ["user", "wishlists", "items", "1", "move"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "User — Cart",
+      "item": [
+        {
+          "name": "Get Cart",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/cart?address_id=1&rush_delivery=false&use_wallet=false",
+              "host": ["{{base_url}}"],
+              "path": ["user", "cart"],
+              "query": [
+                { "key": "address_id", "value": "1", "description": "ID of saved address for delivery fee calculation" },
+                { "key": "rush_delivery", "value": "false" },
+                { "key": "use_wallet", "value": "false" },
+                { "key": "promo_code", "value": "SAVE20", "disabled": true },
+                { "key": "latitude", "value": "24.8607", "disabled": true, "description": "Use instead of address_id" },
+                { "key": "longitude", "value": "67.0011", "disabled": true }
+              ]
+            },
+            "description": "Returns full pricing: subtotal, delivery fee, rush delivery fee, promo discount, wallet deduction, grand total."
+          }
+        },
+        {
+          "name": "Add to Cart",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": 1,\n  \"store_id\": 1,\n  \"quantity\": 2,\n  \"addons\": [1, 3]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/user/cart/add",
+              "host": ["{{base_url}}"],
+              "path": ["user", "cart", "add"]
+            },
+            "description": "No product_variant_id — food delivery uses product_id + store_id + optional addons (e.g. extra cheese, large size)."
+          }
+        },
+        {
+          "name": "Update Cart Item Quantity",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 3\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/user/cart/item/1",
+              "host": ["{{base_url}}"],
+              "path": ["user", "cart", "item", "1"]
+            }
+          }
+        },
+        {
+          "name": "Remove from Cart",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/cart/item/1",
+              "host": ["{{base_url}}"],
+              "path": ["user", "cart", "item", "1"]
+            }
+          }
+        },
+        {
+          "name": "Get Save-for-Later Items",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/cart/item/save-for-later",
+              "host": ["{{base_url}}"],
+              "path": ["user", "cart", "item", "save-for-later"]
+            }
+          }
+        },
+        {
+          "name": "Save Item for Later",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/cart/item/save-for-later/1",
+              "host": ["{{base_url}}"],
+              "path": ["user", "cart", "item", "save-for-later", "1"]
+            }
+          }
+        },
+        {
+          "name": "Clear Cart",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/cart/clear-cart",
+              "host": ["{{base_url}}"],
+              "path": ["user", "cart", "clear-cart"]
+            }
+          }
+        },
+        {
+          "name": "Sync Cart",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"store_id\": 1,\n      \"product_variant_id\": 1,\n      \"quantity\": 2\n    }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/user/cart/sync",
+              "host": ["{{base_url}}"],
+              "path": ["user", "cart", "sync"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "User — Promos",
+      "item": [
+        {
+          "name": "Get Available Promos",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/promos/available",
+              "host": ["{{base_url}}"],
+              "path": ["user", "promos", "available"]
+            }
+          }
+        },
+        {
+          "name": "Validate Promo Code",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/promos/validate?code=SAVE20",
+              "host": ["{{base_url}}"],
+              "path": ["user", "promos", "validate"],
+              "query": [
+                { "key": "code", "value": "SAVE20" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "User — Orders",
+      "item": [
+        {
+          "name": "List My Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/orders?page=1&per_page=15",
+              "host": ["{{base_url}}"],
+              "path": ["user", "orders"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "per_page", "value": "15" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Order — COD",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payment_type\": \"cod\",\n  \"address_id\": 1,\n  \"rush_delivery\": false,\n  \"use_wallet\": false,\n  \"promo_code\": null,\n  \"order_note\": \"Please ring the doorbell.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/user/orders",
+              "host": ["{{base_url}}"],
+              "path": ["user", "orders"]
+            }
+          }
+        },
+        {
+          "name": "Create Order — Wallet",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payment_type\": \"wallet\",\n  \"address_id\": 1,\n  \"rush_delivery\": false,\n  \"order_note\": \"\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/user/orders",
+              "host": ["{{base_url}}"],
+              "path": ["user", "orders"]
+            }
+          }
+        },
+        {
+          "name": "Create Order — Stripe",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payment_type\": \"stripePayment\",\n  \"address_id\": 1,\n  \"transaction_id\": \"pi_3abc123\",\n  \"rush_delivery\": false,\n  \"order_note\": \"\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/user/orders",
+              "host": ["{{base_url}}"],
+              "path": ["user", "orders"]
+            },
+            "description": "transaction_id is required for stripe. Get it from POST /stripe/create-order first."
+          }
+        },
+        {
+          "name": "Create Order — Razorpay",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payment_type\": \"razorpayPayment\",\n  \"address_id\": 1,\n  \"transaction_id\": \"pay_abc123\",\n  \"razorpay_order_id\": \"order_abc123\",\n  \"razorpay_signature\": \"sig_abc123\",\n  \"rush_delivery\": false\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/user/orders",
+              "host": ["{{base_url}}"],
+              "path": ["user", "orders"]
+            },
+            "description": "Requires transaction_id + razorpay_order_id + razorpay_signature. Get them from POST /razorpay/create-order."
+          }
+        },
+        {
+          "name": "Create Order — Paystack",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payment_type\": \"paystackPayment\",\n  \"address_id\": 1,\n  \"transaction_id\": \"txn_ref_123\",\n  \"rush_delivery\": false\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/user/orders",
+              "host": ["{{base_url}}"],
+              "path": ["user", "orders"]
+            }
+          }
+        },
+        {
+          "name": "Get Single Order",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/orders/order-slug-here",
+              "host": ["{{base_url}}"],
+              "path": ["user", "orders", "order-slug-here"]
+            },
+            "description": "Replace 'order-slug-here' with the actual order slug from List Orders."
+          }
+        },
+        {
+          "name": "Get Delivery Boy Live Location",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/orders/order-slug-here/delivery-boy-location",
+              "host": ["{{base_url}}"],
+              "path": ["user", "orders", "order-slug-here", "delivery-boy-location"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Order Item",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/orders/items/1/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["user", "orders", "items", "1", "cancel"]
+            }
+          }
+        },
+        {
+          "name": "Return Order Item",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "reason", "value": "Wrong item delivered", "type": "text" },
+                { "key": "images[]", "type": "file", "src": "", "description": "Optional proof images (jpg/png/webp)" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/user/orders/items/1/return",
+              "host": ["{{base_url}}"],
+              "path": ["user", "orders", "items", "1", "return"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Return Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/orders/items/1/return-cancel",
+              "host": ["{{base_url}}"],
+              "path": ["user", "orders", "items", "1", "return-cancel"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "User — Order Transactions",
+      "item": [
+        {
+          "name": "List Order Transactions",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/order-transactions?page=1&per_page=15",
+              "host": ["{{base_url}}"],
+              "path": ["user", "order-transactions"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "per_page", "value": "15" },
+                { "key": "payment_status", "value": "completed", "disabled": true },
+                { "key": "search", "value": "TX123", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Order Transaction",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/user/order-transactions/1",
+              "host": ["{{base_url}}"],
+              "path": ["user", "order-transactions", "1"]
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "Get Payment Variables",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/payment/variables",
+              "host": ["{{base_url}}"],
+              "path": ["payment", "variables"]
+            }
+          }
+        },
+        {
+          "name": "Razorpay — Create Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 500\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/razorpay/create-order",
+              "host": ["{{base_url}}"],
+              "path": ["razorpay", "create-order"]
+            }
+          }
+        },
+        {
+          "name": "Razorpay — Webhook",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{}", "options": { "raw": { "language": "json" } } },
+            "url": {
+              "raw": "{{base_url}}/webhook/razorpay",
+              "host": ["{{base_url}}"],
+              "path": ["webhook", "razorpay"]
+            }
+          }
+        },
+        {
+          "name": "Stripe — Create Payment Intent",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 500\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/stripe/create-order",
+              "host": ["{{base_url}}"],
+              "path": ["stripe", "create-order"]
+            }
+          }
+        },
+        {
+          "name": "Stripe — Webhook",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{}", "options": { "raw": { "language": "json" } } },
+            "url": {
+              "raw": "{{base_url}}/stripe/webhook",
+              "host": ["{{base_url}}"],
+              "path": ["stripe", "webhook"]
+            }
+          }
+        },
+        {
+          "name": "Stripe — Refund Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payment_intent_id\": \"pi_3abc123\",\n  \"amount\": 500\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/stripe/refund-payment",
+              "host": ["{{base_url}}"],
+              "path": ["stripe", "refund-payment"]
+            }
+          }
+        },
+        {
+          "name": "Paystack — Create Payment Intent",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{auth_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 500\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/paystack/create-order",
+              "host": ["{{base_url}}"],
+              "path": ["paystack", "create-order"]
+            }
+          }
+        },
+        {
+          "name": "Paystack — Webhook",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{}", "options": { "raw": { "language": "json" } } },
+            "url": {
+              "raw": "{{base_url}}/paystack/webhook",
+              "host": ["{{base_url}}"],
+              "path": ["paystack", "webhook"]
+            }
+          }
+        },
+        {
+          "name": "Paystack — Callback",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": {
+              "raw": "{{base_url}}/paystack/callback?reference=REF123",
+              "host": ["{{base_url}}"],
+              "path": ["paystack", "callback"],
+              "query": [
+                { "key": "reference", "value": "REF123" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Paystack — Refund",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transaction\": \"txn_ref_123\",\n  \"amount\": 500\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/paystack/refund",
+              "host": ["{{base_url}}"],
+              "path": ["paystack", "refund"]
+            }
+          }
+        },
+        {
+          "name": "Flutterwave — Webhook",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{}", "options": { "raw": { "language": "json" } } },
+            "url": {
+              "raw": "{{base_url}}/flutterwave/webhook",
+              "host": ["{{base_url}}"],
+              "path": ["flutterwave", "webhook"]
+            }
+          }
+        }
+      ]
+    }
+
+  ]
+}

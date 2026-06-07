@@ -41,17 +41,11 @@ class FeaturedSectionResource extends JsonResource
 
             // Filter products by stores in the zone
             $productsQuery->with([
-                'variants' => function ($q) use ($storeIds) {
-                    $q->whereHas('storeProductVariants', function ($sq) use ($storeIds) {
-                        $sq->whereIn('store_id', $storeIds);
-                    });
+                'storeProducts' => function ($q) use ($storeIds) {
+                    $q->whereIn('store_id', $storeIds)->with('store');
                 },
-                'variants.storeProductVariants' => function ($q) use ($storeIds) {
-                    $q->whereIn('store_id', $storeIds);
-                },
-                'variants.storeProductVariants.store',
             ])
-            ->whereHas('variants.storeProductVariants', function ($q) use ($storeIds) {
+            ->whereHas('storeProducts', function ($q) use ($storeIds) {
                 $q->whereIn('store_id', $storeIds);
             });
 
